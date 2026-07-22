@@ -1,0 +1,6 @@
+{
+  "name": "OpenCAD Responder",
+  "description": "Mobile view for the OpenCAD Operations Platform.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
