@@ -853,147 +853,70 @@ function ShiftPill({ role, call, color, label }: { role: 'net'|'empty', call?: s
 }
 
 function UnitsTab() {
-  const MOCK_UNITS = [
-    { id: 'E1', type: 'Engine', status: 'Available', location: 'Station 1', personnel: 4, updated: '10:00 AM' },
-    { id: 'M1', type: 'Medic', status: 'Assigned', location: '123 Main St', personnel: 2, updated: '10:15 AM' },
-    { id: 'R1', type: 'Rescue', status: 'En Route', location: '456 Elm St', personnel: 3, updated: '10:20 AM' },
-    { id: 'CERT A', type: 'CERT', status: 'Available', location: 'HQ', personnel: 8, updated: '09:00 AM' },
-    { id: 'Patrol 1', type: 'Police', status: 'Available', location: 'Sector 1', personnel: 1, updated: '10:05 AM' }
+  const units = [
+    { id: 'MED-1', type: 'Ambulance', status: 'Available', location: 'Station 1' },
+    { id: 'MED-2', type: 'Ambulance', status: 'Dispatched', location: '123 Main St' },
+    { id: 'ENG-1', type: 'Fire Engine', status: 'En Route', location: '456 Oak Ave' },
+    { id: 'LAD-1', type: 'Ladder', status: 'On Scene', location: '456 Oak Ave' },
+    { id: 'PD-101', type: 'Police', status: 'Available', location: 'Sector 4' },
   ];
-
   return (
-    <div className="flex-1 bg-[#151e2e] flex flex-col overflow-hidden">
-      <div className="bg-[#1e293b] p-3 border-b border-slate-700 flex justify-between items-center shadow-sm z-10">
-        <h2 className="text-xl text-white font-semibold flex items-center gap-2">
-          <Truck size={20} className="text-blue-500" /> Units <span className="bg-slate-700 text-xs px-2 py-0.5 rounded text-slate-300">5</span>
-        </h2>
-        <div className="flex gap-2">
-          <button className="px-4 py-1.5 bg-blue-600 hover:bg-blue-500 text-white rounded text-sm font-medium flex items-center gap-2">
-            <Plus size={14} /> New Unit
-          </button>
-        </div>
-      </div>
-      <div className="p-3 bg-[#1e293b] border-b border-slate-700 flex flex-col md:flex-row items-center gap-4 text-sm z-10">
-        <div className="relative flex-1 w-full max-w-md">
-          <Search size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-500" />
-          <input type="text" placeholder="Search units..." className="w-full bg-[#0f172a] border border-slate-700 rounded-full pl-9 pr-4 py-1.5 text-slate-200 outline-none focus:border-blue-500" />
-        </div>
-        <div className="flex items-center gap-2 text-slate-400 w-full md:w-auto">
-           Status: <span className="bg-blue-600 text-white px-2 py-0.5 rounded text-xs">All</span>
-        </div>
-      </div>
-      <div className="flex-1 overflow-auto p-4">
-        <div className="bg-[#1e293b] rounded-lg border border-slate-700 overflow-hidden">
-          <div className="overflow-x-auto">
-            <table className="w-full text-sm text-left min-w-[600px]">
-              <thead className="text-slate-400 bg-slate-800/50 sticky top-0 border-b border-slate-700">
-                <tr>
-                  <th className="p-3 font-bold uppercase text-xs">UNIT ID</th>
-                  <th className="p-3 font-bold uppercase text-xs">TYPE</th>
-                  <th className="p-3 font-bold uppercase text-xs">STATUS</th>
-                  <th className="p-3 font-bold uppercase text-xs">LOCATION</th>
-                  <th className="p-3 font-bold uppercase text-xs">PERSONNEL</th>
-                  <th className="p-3 font-bold uppercase text-xs">UPDATED</th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-slate-700/50">
-                {MOCK_UNITS.map((u, i) => (
-                  <tr key={i} className="hover:bg-slate-700/30 cursor-pointer">
-                    <td className="p-3 text-white font-bold">{u.id}</td>
-                    <td className="p-3 text-slate-300">{u.type}</td>
-                    <td className="p-3">
-                      <span className={`px-2 py-0.5 rounded text-xs font-bold ${
-                        u.status === 'Available' ? 'bg-green-500/20 text-green-400 border border-green-500/30' :
-                        u.status === 'Assigned' ? 'bg-yellow-500/20 text-yellow-400 border border-yellow-500/30' :
-                        'bg-blue-500/20 text-blue-400 border border-blue-500/30'
-                      }`}>
-                        {u.status}
-                      </span>
-                    </td>
-                    <td className="p-3 text-slate-400">{u.location}</td>
-                    <td className="p-3 text-slate-300">{u.personnel}</td>
-                    <td className="p-3 text-slate-500">{u.updated}</td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
-        </div>
+    <div className="flex-1 p-6 bg-[#0f172a] text-slate-300">
+      <h2 className="text-xl font-bold text-white mb-4 flex items-center gap-2"><Truck size={20}/> Units (Training Simulation)</h2>
+      <div className="bg-slate-800 rounded-lg border border-slate-700 overflow-hidden">
+        <table className="w-full text-left text-sm">
+          <thead className="bg-slate-900 border-b border-slate-700">
+            <tr>
+              <th className="p-3 font-semibold text-slate-400">Unit ID</th>
+              <th className="p-3 font-semibold text-slate-400">Type</th>
+              <th className="p-3 font-semibold text-slate-400">Status</th>
+              <th className="p-3 font-semibold text-slate-400">Location</th>
+            </tr>
+          </thead>
+          <tbody className="divide-y divide-slate-700/50">
+            {units.map(u => (
+              <tr key={u.id} className="hover:bg-slate-700/30">
+                <td className="p-3 font-medium text-white">{u.id}</td>
+                <td className="p-3 text-slate-400">{u.type}</td>
+                <td className="p-3">
+                  <span className={`px-2 py-1 rounded text-xs font-medium ${
+                    u.status === 'Available' ? 'bg-green-500/20 text-green-400' :
+                    u.status === 'Dispatched' ? 'bg-yellow-500/20 text-yellow-400' :
+                    u.status === 'En Route' ? 'bg-blue-500/20 text-blue-400' :
+                    'bg-red-500/20 text-red-400'
+                  }`}>{u.status}</span>
+                </td>
+                <td className="p-3 text-slate-400">{u.location}</td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
       </div>
     </div>
   );
 }
 
 function FacsTab() {
-  const MOCK_FACS = [
-    { name: 'Bloomington Civic Plaza', type: 'ICC', status: 'Open', hours: '00:00-23:59', capacity: '100%' },
-    { name: 'Community Center', type: 'Shelter', status: 'Closed', hours: '-', capacity: '0%' },
-    { name: 'Station 1', type: 'Fire Station', status: 'Open', hours: '24/7', capacity: 'N/A' },
-    { name: 'Hospital A', type: 'Medical', status: 'Open', hours: '24/7', capacity: '85%' },
+  const facs = [
+    { name: 'City General Hospital', type: 'Medical', beds: '45 Available', distance: '2.4 mi' },
+    { name: 'Mercy Trauma Center', type: 'Medical', beds: '12 Available', distance: '5.1 mi' },
+    { name: 'Fire Station 1', type: 'Fire', beds: 'N/A', distance: '1.2 mi' },
+    { name: 'Central Police Precinct', type: 'Police', beds: 'N/A', distance: '0.8 mi' },
   ];
-
   return (
-    <div className="flex-1 bg-[#151e2e] flex flex-col overflow-hidden">
-      <div className="bg-[#1e293b] p-3 border-b border-slate-700 flex justify-between items-center shadow-sm z-10">
-        <h2 className="text-xl text-white font-semibold flex items-center gap-2">
-          <Building2 size={20} className="text-blue-500" /> Facilities <span className="bg-slate-700 text-xs px-2 py-0.5 rounded text-slate-300">4</span>
-        </h2>
-        <div className="flex gap-2">
-          <button className="px-4 py-1.5 bg-blue-600 hover:bg-blue-500 text-white rounded text-sm font-medium flex items-center gap-2">
-            <Plus size={14} /> Add Facility
-          </button>
-        </div>
-      </div>
-      <div className="p-3 bg-[#1e293b] border-b border-slate-700 flex flex-col md:flex-row items-center gap-4 text-sm z-10">
-        <div className="relative flex-1 w-full max-w-md">
-          <Search size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-500" />
-          <input type="text" placeholder="Search facilities..." className="w-full bg-[#0f172a] border border-slate-700 rounded-full pl-9 pr-4 py-1.5 text-slate-200 outline-none focus:border-blue-500" />
-        </div>
-        <div className="flex items-center gap-2 text-slate-400 w-full md:w-auto">
-           Type: <span className="bg-blue-600 text-white px-2 py-0.5 rounded text-xs">All</span>
-        </div>
-      </div>
-      <div className="flex-1 overflow-auto p-4 flex flex-col lg:flex-row gap-4">
-        <div className="flex-[2] bg-[#1e293b] rounded-lg border border-slate-700 overflow-hidden min-h-[300px]">
-          <div className="overflow-x-auto">
-            <table className="w-full text-sm text-left min-w-[500px]">
-              <thead className="text-slate-400 bg-slate-800/50 sticky top-0 border-b border-slate-700">
-                <tr>
-                  <th className="p-3 font-bold uppercase text-xs">NAME</th>
-                  <th className="p-3 font-bold uppercase text-xs">TYPE</th>
-                  <th className="p-3 font-bold uppercase text-xs">STATUS</th>
-                  <th className="p-3 font-bold uppercase text-xs">HOURS</th>
-                  <th className="p-3 font-bold uppercase text-xs">CAPACITY</th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-slate-700/50">
-                {MOCK_FACS.map((f, i) => (
-                  <tr key={i} className="hover:bg-slate-700/30 cursor-pointer">
-                    <td className="p-3 text-white font-bold">{f.name}</td>
-                    <td className="p-3 text-slate-300">{f.type}</td>
-                    <td className="p-3">
-                      <span className={`px-2 py-0.5 rounded text-xs font-bold ${f.status === 'Open' ? 'bg-green-500/20 text-green-400 border border-green-500/30' : 'bg-red-500/20 text-red-400 border border-red-500/30'}`}>
-                        {f.status}
-                      </span>
-                    </td>
-                    <td className="p-3 text-slate-400">{f.hours}</td>
-                    <td className="p-3 text-slate-400">{f.capacity}</td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
+    <div className="flex-1 p-6 bg-[#0f172a] text-slate-300">
+      <h2 className="text-xl font-bold text-white mb-4 flex items-center gap-2"><Building2 size={20}/> Facilities (Training Simulation)</h2>
+      <div className="grid grid-cols-2 gap-4">
+        {facs.map((f, i) => (
+          <div key={i} className="bg-slate-800 p-4 rounded-lg border border-slate-700">
+            <h3 className="font-bold text-white mb-1">{f.name}</h3>
+            <div className="text-sm text-slate-400 grid grid-cols-2 gap-2 mt-3">
+              <div><span className="block text-xs text-slate-500 uppercase">Type</span>{f.type}</div>
+              <div><span className="block text-xs text-slate-500 uppercase">Distance</span>{f.distance}</div>
+              <div className="col-span-2"><span className="block text-xs text-slate-500 uppercase">Capacity</span>{f.beds}</div>
+            </div>
           </div>
-        </div>
-        <div className="flex-[1] bg-[#1e293b] rounded-lg border border-slate-700 flex flex-col min-h-[300px]">
-          <div className="bg-slate-800 p-2 flex justify-between items-center text-sm font-medium border-b border-slate-700 text-white">
-            <div className="flex items-center gap-2"><MapIcon size={16}/> Map View</div>
-          </div>
-          <div className="flex-1 relative bg-slate-100 z-0">
-            <MapContainer center={[44.9778, -93.2650]} zoom={11} style={{ height: '100%', width: '100%' }}>
-               <TileLayer url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png" />
-            </MapContainer>
-          </div>
-        </div>
+        ))}
       </div>
     </div>
   );
@@ -1001,37 +924,20 @@ function FacsTab() {
 
 function SearchTab() {
   return (
-    <div className="flex-1 bg-[#151e2e] flex flex-col overflow-y-auto items-center p-8">
-      <div className="w-full max-w-3xl flex flex-col gap-6">
-        <div className="text-center mb-4 mt-8">
-          <h2 className="text-3xl font-bold text-white mb-2 flex justify-center items-center gap-3">
-            <Search className="text-blue-500" size={32} /> Global Search
-          </h2>
-          <p className="text-slate-400">Search across incidents, units, personnel, facilities, and SOPs.</p>
+    <div className="flex-1 p-6 bg-[#0f172a] text-slate-300">
+      <h2 className="text-xl font-bold text-white mb-4 flex items-center gap-2"><Search size={20}/> Database Search (Training Simulation)</h2>
+      <div className="max-w-2xl">
+        <div className="flex gap-2 mb-6">
+          <input type="text" placeholder="Search plates, names, locations, incidents..." className="flex-1 bg-slate-900 border border-slate-700 rounded p-3 text-white focus:outline-none focus:border-blue-500" />
+          <button className="bg-blue-600 hover:bg-blue-500 text-white px-6 rounded font-medium transition-colors">Search</button>
         </div>
-        <div className="relative flex w-full shadow-lg">
-          <Search size={24} className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400" />
-          <input type="text" placeholder="Enter keywords, IDs, callsigns, or names..." className="w-full bg-[#1e293b] border border-slate-600 rounded-lg pl-12 pr-4 py-4 text-lg text-slate-200 outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500" />
-          <button className="absolute right-2 top-1/2 -translate-y-1/2 bg-blue-600 hover:bg-blue-500 text-white px-6 py-2 rounded font-medium">Search</button>
-        </div>
-        
-        <div className="flex flex-wrap gap-2 justify-center mt-2">
-          <span className="text-sm text-slate-500">Quick Filters:</span>
-          {['All', 'Incidents', 'Units', 'Personnel', 'Facilities'].map(f => (
-            <button key={f} className="text-xs bg-slate-800 hover:bg-slate-700 border border-slate-700 text-slate-300 px-3 py-1 rounded-full">{f}</button>
-          ))}
-        </div>
-
-        <div className="mt-8 flex flex-col gap-4">
-          <div className="text-slate-500 text-sm font-medium border-b border-slate-700 pb-2">Recent Searches</div>
-          <div className="flex flex-col gap-2">
-            {['11/TBD', 'KD9GHI', 'Fire Alarm', 'M1'].map(s => (
-              <div key={s} className="flex items-center gap-3 text-slate-300 hover:text-white cursor-pointer p-2 hover:bg-slate-800 rounded">
-                 <Search size={14} className="text-slate-500" />
-                 <span>{s}</span>
-              </div>
-            ))}
-          </div>
+        <div className="bg-slate-800 rounded-lg border border-slate-700 p-4">
+          <h3 className="text-sm font-semibold text-slate-400 uppercase tracking-wider mb-3">Recent Training Searches</h3>
+          <ul className="space-y-2 text-sm text-slate-300">
+            <li className="flex items-center gap-2"><Search size={14} className="text-slate-500"/> John Doe (DOB: 05/12/1985)</li>
+            <li className="flex items-center gap-2"><Search size={14} className="text-slate-500"/> Lic: ABC-1234 (CA)</li>
+            <li className="flex items-center gap-2"><Search size={14} className="text-slate-500"/> 456 Oak Ave (History)</li>
+          </ul>
         </div>
       </div>
     </div>
@@ -1040,223 +946,84 @@ function SearchTab() {
 
 function ReportsTab() {
   return (
-    <div className="flex-1 bg-white text-slate-800 flex flex-col md:flex-row overflow-y-auto md:overflow-hidden">
-      <div className="w-full md:w-64 bg-slate-50 border-b md:border-b-0 md:border-r border-slate-200 shrink-0 p-4 md:overflow-y-auto hidden md:block">
-         <div className="flex items-center gap-2 font-bold text-slate-700 mb-6">
-           <FileText size={18} className="text-blue-600" /> Reports
-         </div>
-         <MenuSection title="STANDARD">
-           <MenuItem label="Daily Summary" active />
-           <MenuItem label="Incident Log" />
-           <MenuItem label="Unit Activity" />
-           <MenuItem label="Personnel Hours" />
-         </MenuSection>
-         <MenuSection title="ANALYTICS">
-           <MenuItem label="Response Times" />
-           <MenuItem label="Heatmaps" />
-           <MenuItem label="Type Breakdown" />
-         </MenuSection>
-         <MenuSection title="CUSTOM">
-           <MenuItem label="Saved Reports" />
-           <MenuItem label="Report Builder" />
-         </MenuSection>
-      </div>
-      <div className="flex-1 flex flex-col overflow-y-auto bg-slate-100">
-        <div className="bg-white p-4 border-b border-slate-200 flex justify-between items-center shadow-sm">
-          <h2 className="text-xl text-slate-800 font-semibold flex items-center gap-2">Daily Summary Report</h2>
-          <div className="flex gap-2">
-            <button className="px-4 py-1.5 border border-slate-300 rounded text-slate-600 hover:bg-slate-50 flex items-center gap-2 text-sm font-medium hidden sm:flex">
-              <Printer size={14} /> Print
-            </button>
-            <button className="px-4 py-1.5 bg-blue-600 hover:bg-blue-700 text-white rounded text-sm font-medium">
-              Export PDF
-            </button>
+    <div className="flex-1 p-6 bg-[#0f172a] text-slate-300">
+      <h2 className="text-xl font-bold text-white mb-4 flex items-center gap-2"><FileText size={20}/> Reports (Training Simulation)</h2>
+      <div className="grid grid-cols-3 gap-4">
+        {['End of Shift Report', 'Incident Summary', 'Unit Utilization', 'Response Times', 'Officer Activity'].map(report => (
+          <div key={report} className="bg-slate-800 p-4 rounded-lg border border-slate-700 hover:border-slate-500 cursor-pointer transition-colors">
+            <FileText size={24} className="text-blue-400 mb-2" />
+            <h3 className="font-medium text-white">{report}</h3>
+            <p className="text-xs text-slate-500 mt-1">Generate training mock report</p>
           </div>
-        </div>
-        <div className="p-4 sm:p-6">
-          <div className="bg-white border border-slate-200 rounded-lg p-4 sm:p-6 shadow-sm max-w-4xl mx-auto">
-            <div className="text-center mb-8 border-b border-slate-200 pb-6">
-              <h1 className="text-2xl sm:text-3xl font-bold text-slate-800 mb-2">Daily Operations Summary</h1>
-              <p className="text-slate-500 text-sm sm:text-base">Date: {new Date().toLocaleDateString()} | Generated By: admin</p>
-            </div>
-            
-            <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 sm:gap-6 mb-8">
-              <div className="bg-slate-50 border border-slate-200 rounded p-4 text-center">
-                <div className="text-4xl font-bold text-blue-600 mb-1">24</div>
-                <div className="text-xs font-bold text-slate-500 uppercase">Total Incidents</div>
-              </div>
-              <div className="bg-slate-50 border border-slate-200 rounded p-4 text-center">
-                <div className="text-4xl font-bold text-emerald-600 mb-1">12</div>
-                <div className="text-xs font-bold text-slate-500 uppercase">Active Units</div>
-              </div>
-              <div className="bg-slate-50 border border-slate-200 rounded p-4 text-center">
-                <div className="text-4xl font-bold text-purple-600 mb-1">5m 20s</div>
-                <div className="text-xs font-bold text-slate-500 uppercase">Avg Response Time</div>
-              </div>
-            </div>
-
-            <h3 className="text-lg font-bold text-slate-800 mb-4 border-b border-slate-200 pb-2">Recent Incidents</h3>
-            <div className="overflow-x-auto">
-              <table className="w-full text-sm text-left border border-slate-200 min-w-[500px]">
-                <thead className="bg-slate-50 border-b border-slate-200 text-slate-600">
-                  <tr>
-                    <th className="p-3 font-bold text-xs uppercase">Time</th>
-                    <th className="p-3 font-bold text-xs uppercase">Type</th>
-                    <th className="p-3 font-bold text-xs uppercase">Location</th>
-                    <th className="p-3 font-bold text-xs uppercase">Resolution</th>
-                  </tr>
-                </thead>
-                <tbody className="divide-y divide-slate-100">
-                  <tr>
-                    <td className="p-3">09:15 AM</td>
-                    <td className="p-3 font-medium">WxSpotter</td>
-                    <td className="p-3 text-slate-600">Main St & 1st Ave</td>
-                    <td className="p-3 text-emerald-600 font-medium">Closed</td>
-                  </tr>
-                  <tr>
-                    <td className="p-3">10:30 AM</td>
-                    <td className="p-3 font-medium">WelfareChk</td>
-                    <td className="p-3 text-slate-600">456 Elm St</td>
-                    <td className="p-3 text-emerald-600 font-medium">Closed</td>
-                  </tr>
-                  <tr>
-                    <td className="p-3">11:45 AM</td>
-                    <td className="p-3 font-medium">EmergNet</td>
-                    <td className="p-3 text-slate-600">City Hall</td>
-                    <td className="p-3 text-blue-600 font-medium">Active</td>
-                  </tr>
-                </tbody>
-              </table>
-            </div>
-          </div>
-        </div>
+        ))}
       </div>
     </div>
   );
 }
 
 function SOPTab() {
-  const SOP_LIST = [
-    { id: 'SOP-01', title: 'General Dispatch Protocol', category: 'General', updated: 'Jan 10, 2026' },
-    { id: 'SOP-02', title: 'Severe Weather Operations', category: 'Weather', updated: 'Mar 15, 2026' },
-    { id: 'SOP-03', title: 'Radio Etiquette and Codes', category: 'Comms', updated: 'Feb 20, 2026' },
-    { id: 'SOP-04', title: 'Emergency Evacuation', category: 'Emergency', updated: 'Nov 05, 2025' },
-    { id: 'SOP-05', title: 'Medical Call Handling', category: 'Medical', updated: 'Dec 12, 2025' },
+  const sops = [
+    { title: 'Active Shooter Protocol', category: 'Emergency', updated: '2023-11-01' },
+    { title: 'Hazmat Spill Response', category: 'Fire/Rescue', updated: '2023-09-15' },
+    { title: 'Medical: Cardiac Arrest', category: 'Medical', updated: '2024-01-10' },
+    { title: 'Suspicious Package', category: 'Police', updated: '2023-12-05' },
   ];
-
   return (
-    <div className="flex-1 bg-white text-slate-800 flex flex-col md:flex-row overflow-y-auto md:overflow-hidden">
-      <div className="w-full md:w-80 bg-slate-50 border-b md:border-b-0 md:border-r border-slate-200 flex flex-col shrink-0 hidden md:flex">
-        <div className="p-4 border-b border-slate-200">
-           <h2 className="font-bold text-slate-700 flex items-center gap-2 mb-4">
-             <BookOpen size={18} className="text-blue-600" /> SOP Library
-           </h2>
-           <div className="relative">
-             <Search size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
-             <input type="text" placeholder="Search SOPs..." className="w-full bg-white border border-slate-300 rounded pl-9 pr-3 py-2 text-sm outline-none focus:border-blue-500" />
-           </div>
-        </div>
-        <div className="flex-1 overflow-y-auto p-2">
-          {SOP_LIST.map(sop => (
-            <div key={sop.id} className="p-3 hover:bg-white rounded cursor-pointer border border-transparent hover:border-slate-200 mb-1">
-              <div className="flex justify-between items-start mb-1">
-                 <span className="text-xs font-bold text-blue-600">{sop.id}</span>
-                 <span className="text-[10px] bg-slate-200 text-slate-600 px-1.5 rounded">{sop.category}</span>
-              </div>
-              <div className="font-medium text-sm text-slate-800">{sop.title}</div>
-              <div className="text-xs text-slate-400 mt-1">Updated: {sop.updated}</div>
-            </div>
-          ))}
-        </div>
-      </div>
-      <div className="flex-1 bg-slate-100 flex flex-col overflow-y-auto md:overflow-hidden">
-         <div className="bg-white p-4 border-b border-slate-200 flex justify-between items-center shadow-sm">
-            <div>
-              <div className="text-sm font-bold text-blue-600 mb-1">SOP-02</div>
-              <h2 className="text-lg sm:text-xl text-slate-800 font-semibold">Severe Weather Operations</h2>
-            </div>
-            <button className="px-4 py-1.5 border border-slate-300 rounded text-slate-600 hover:bg-slate-50 flex items-center gap-2 text-sm font-medium">
-              <Printer size={14} /> Print
-            </button>
-         </div>
-         <div className="flex-1 overflow-y-auto p-4 sm:p-8">
-            <div className="max-w-3xl mx-auto bg-white border border-slate-200 rounded-lg p-6 sm:p-8 shadow-sm">
-               <div className="prose prose-slate max-w-none text-sm">
-                 <h3 className="text-lg font-bold border-b pb-2 mb-4">1. Purpose</h3>
-                 <p className="mb-6 text-slate-600 leading-relaxed">The purpose of this Standard Operating Procedure (SOP) is to establish guidelines for dispatch operations during severe weather events, ensuring timely response and coordination with weather spotters and emergency services.</p>
-                 
-                 <h3 className="text-lg font-bold border-b pb-2 mb-4">2. Activation</h3>
-                 <p className="mb-6 text-slate-600 leading-relaxed">Severe weather protocol is activated when the National Weather Service (NWS) issues a severe thunderstorm watch, tornado watch, or warning for the coverage area.</p>
-
-                 <h3 className="text-lg font-bold border-b pb-2 mb-4">3. Procedures</h3>
-                 <ul className="list-disc pl-5 mb-6 text-slate-600 space-y-2">
-                   <li>Acknowledge weather alerts via primary dispatch channels.</li>
-                   <li>Initiate the Skywarn net and assign a Net Control Station (NCS).</li>
-                   <li>Log all spotter reports using the <code>WxSpotter</code> incident type.</li>
-                   <li>Relay critical information (tornado sightings, hail &gt; 1 inch, wind &gt; 58 mph) directly to NWS.</li>
-                   <li>Maintain regular status checks with deployed field units.</li>
-                 </ul>
-                 
-                 <div className="bg-yellow-50 border border-yellow-200 p-4 rounded text-yellow-800 mt-8 text-sm">
-                   <strong>Important:</strong> Life safety takes precedence over property reporting. Instruct spotters to seek shelter if conditions become hazardous.
-                 </div>
-               </div>
-            </div>
-         </div>
+    <div className="flex-1 p-6 bg-[#0f172a] text-slate-300">
+      <h2 className="text-xl font-bold text-white mb-4 flex items-center gap-2"><BookOpen size={20}/> Standard Operating Procedures</h2>
+      <div className="bg-slate-800 rounded-lg border border-slate-700 overflow-hidden">
+        <table className="w-full text-left text-sm">
+          <thead className="bg-slate-900 border-b border-slate-700">
+            <tr>
+              <th className="p-3 font-semibold text-slate-400">Title</th>
+              <th className="p-3 font-semibold text-slate-400">Category</th>
+              <th className="p-3 font-semibold text-slate-400">Last Updated</th>
+              <th className="p-3 font-semibold text-slate-400"></th>
+            </tr>
+          </thead>
+          <tbody className="divide-y divide-slate-700/50">
+            {sops.map((sop, i) => (
+              <tr key={i} className="hover:bg-slate-700/30">
+                <td className="p-3 font-medium text-white">{sop.title}</td>
+                <td className="p-3 text-slate-400">{sop.category}</td>
+                <td className="p-3 text-slate-400">{sop.updated}</td>
+                <td className="p-3 text-right">
+                  <button className="text-blue-400 hover:text-blue-300 text-xs font-medium">View SOP</button>
+                </td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
       </div>
     </div>
   );
 }
 
 function ContactsTab() {
-  const MOCK_CONTACTS = [
-    { name: 'Police Department (Non-Emergency)', phone: '(555) 123-4567', email: 'dispatch@police.local', type: 'Agency' },
-    { name: 'Fire Department (HQ)', phone: '(555) 987-6543', email: 'hq@fire.local', type: 'Agency' },
-    { name: 'National Weather Service', phone: '(555) 555-0000', email: 'skywarn@nws.gov', type: 'External' },
-    { name: 'Public Works', phone: '(555) 222-3333', email: 'pw@city.local', type: 'City Services' },
-    { name: 'Mayor\'s Office', phone: '(555) 444-5555', email: 'mayor@city.local', type: 'Government' },
+  const contacts = [
+    { name: 'Poison Control Center', phone: '1-800-222-1222', desc: 'Toxicology consulting' },
+    { name: 'Public Works (Emergency)', phone: '555-0199', desc: 'Water/Sewer/Roads after hours' },
+    { name: 'Animal Control', phone: '555-0144', desc: 'Aggressive animals, rescues' },
+    { name: 'Coast Guard Sector', phone: '555-0177', desc: 'Marine emergencies' },
   ];
-
   return (
-    <div className="flex-1 bg-[#151e2e] flex flex-col overflow-hidden">
-      <div className="bg-[#1e293b] p-3 border-b border-slate-700 flex justify-between items-center shadow-sm z-10">
-        <h2 className="text-xl text-white font-semibold flex items-center gap-2">
-          <Phone size={20} className="text-blue-500" /> Directory & Contacts
-        </h2>
-        <div className="flex gap-2">
-          <button className="px-4 py-1.5 bg-blue-600 hover:bg-blue-500 text-white rounded text-sm font-medium flex items-center gap-2">
-            <Plus size={14} /> Add Contact
-          </button>
-        </div>
-      </div>
-      <div className="p-3 bg-[#1e293b] border-b border-slate-700 flex flex-col md:flex-row items-center gap-4 text-sm z-10">
-        <div className="relative flex-1 w-full max-w-md">
-          <Search size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-500" />
-          <input type="text" placeholder="Search contacts..." className="w-full bg-[#0f172a] border border-slate-700 rounded-full pl-9 pr-4 py-1.5 text-slate-200 outline-none focus:border-blue-500" />
-        </div>
-        <div className="flex items-center gap-2 text-slate-400 w-full md:w-auto">
-           Group: <span className="bg-blue-600 text-white px-2 py-0.5 rounded text-xs">All</span>
-        </div>
-      </div>
-      <div className="flex-1 overflow-auto p-4">
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
-          {MOCK_CONTACTS.map((c, i) => (
-            <div key={i} className="bg-[#1e293b] border border-slate-700 rounded-lg p-4 hover:border-slate-500 transition-colors">
-               <div className="flex justify-between items-start mb-3">
-                 <div className="w-10 h-10 rounded-full bg-slate-800 flex items-center justify-center text-blue-400 font-bold text-lg border border-slate-700">
-                   {c.name.charAt(0)}
-                 </div>
-                 <span className="text-[10px] uppercase font-bold bg-slate-800 text-slate-400 px-2 py-0.5 rounded">{c.type}</span>
-               </div>
-               <h3 className="font-bold text-white mb-2 truncate" title={c.name}>{c.name}</h3>
-               <div className="flex flex-col gap-1 text-sm text-slate-400">
-                 <div className="flex items-center gap-2"><Phone size={14} className="text-slate-500" /> {c.phone}</div>
-                 <div className="flex items-center gap-2"><Mail size={14} className="text-slate-500" /> {c.email}</div>
-               </div>
+    <div className="flex-1 p-6 bg-[#0f172a] text-slate-300">
+      <h2 className="text-xl font-bold text-white mb-4 flex items-center gap-2"><Phone size={20}/> Important Contacts (Training)</h2>
+      <div className="grid grid-cols-2 gap-4 max-w-4xl">
+        {contacts.map((c, i) => (
+          <div key={i} className="bg-slate-800 p-4 rounded-lg border border-slate-700 flex items-start gap-3">
+            <div className="bg-slate-900 p-2 rounded-full text-slate-400 mt-1">
+              <Phone size={16} />
             </div>
-          ))}
-        </div>
+            <div>
+              <h3 className="font-bold text-white text-sm">{c.name}</h3>
+              <p className="text-blue-400 font-mono text-sm my-1">{c.phone}</p>
+              <p className="text-xs text-slate-500">{c.desc}</p>
+            </div>
+          </div>
+        ))}
       </div>
     </div>
   );
 }
+
