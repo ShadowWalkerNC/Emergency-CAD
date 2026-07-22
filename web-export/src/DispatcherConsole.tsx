@@ -1,14 +1,16 @@
 import React, { useState, useEffect } from 'react';
 import { 
-  Radio, Map as MapIcon, Phone, AlertTriangle, CheckCircle, 
-  ShieldAlert, Mic, Play, Pause, RotateCcw, Target,
-  Users, MessageSquare, CloudLightning, Activity, Menu, Bell
+  Monitor, Maximize, PlusCircle, Truck, Building2, Search, Users, 
+  FileText, Settings, BookOpen, Phone, Volume2, Sun, Moon, User, 
+  LogOut, AlertTriangle, MessageSquare, Radio, Bell, Map as MapIcon,
+  RefreshCw, CheckSquare, Activity, ShieldAlert, Zap, List, Calendar, 
+  ChevronDown, Filter, Printer, Plus, Trash2, Edit2, Check
 } from 'lucide-react';
-import { MapContainer, TileLayer, Marker, Popup } from 'react-leaflet';
+import { MapContainer, TileLayer, Marker } from 'react-leaflet';
 import 'leaflet/dist/leaflet.css';
 import L from 'leaflet';
 
-// Fix Leaflet icon issue in React
+// Fix Leaflet icon issue
 delete (L.Icon.Default.prototype as any)._getIconUrl;
 L.Icon.Default.mergeOptions({
   iconRetinaUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.7.1/images/marker-icon-2x.png',
@@ -16,427 +18,814 @@ L.Icon.Default.mergeOptions({
   shadowUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.7.1/images/marker-shadow.png',
 });
 
-// Mock scenarios and initial data
-const SCENARIOS = [
-  {
-    id: 'scen_1',
-    name: 'Major Collision (I-95)',
-    duration: 60,
-    events: [
-      { t: 2, type: 'RADIO', text: "Engine 12, respond to a reported motor vehicle collision, I-95 Northbound MM 42." },
-      { t: 15, type: 'RADIO', text: "Medic 51, be advised, caller reports multiple patients." },
-      { t: 30, type: 'UPDATE_UNIT', unit: 'ENGINE 12', status: 'En Route' },
-      { t: 45, type: 'UPDATE_UNIT', unit: 'MEDIC 51', status: 'En Route' }
-    ]
-  }
+// -- MOCK DATA --
+const MOCK_INCIDENTS = [
+  { id: '11', scope: '11/TBD', type: 'examp2', location: 'Bloomington City Hall...', sev: 1, units: 0, pts: '-', act: '-', updated: '3/16 12:57 AM' },
+  { id: '15', scope: 'My summary', type: 'examp1', location: 'Park Ave S Minneapolis', sev: 0, units: 0, pts: '-', act: 2, updated: '3/19 02:59 PM' },
+  { id: '19', scope: 'Fire Alarm', type: 'AlarmAct', location: 'Eagan', sev: 0, units: 1, pts: '-', act: 3, updated: '3/17 09:58 PM' },
+  { id: '20', scope: 'Fire alarm', type: 'AlarmAct', location: 'Ave S Bloomington', sev: 0, units: 0, pts: '-', act: 5, updated: '3/17 09:52 PM' },
+  { id: '21', scope: 'Welfare check', type: 'WelfareChk', location: 'Ave S Minneapolis', sev: 0, units: 0, pts: '-', act: 1, updated: '3/16 10:03 PM' }
+];
+
+const MOCK_PERSONNEL = [
+  { name: 'Smith, Jennifer', callsign: 'KD9GHI', type: 'N/A', status: 'N/A', team: '', phone: '', avail: true },
+  { name: 'Johnson, Sarah', callsign: 'KC9WIC', type: 'N/A', status: 'N/A', team: '', phone: '', avail: true },
+  { name: 'Williams, Lisa', callsign: 'W9S...', type: 'N/A', status: 'N/A', team: '', phone: '', avail: true },
+  { name: 'Brown, David', callsign: 'KD9...', type: 'N/A', status: 'N/A', team: '', phone: '', avail: true },
+  { name: 'Martinez, Carlos', callsign: 'KA9...', type: 'N/A', status: 'N/A', team: '', phone: '', avail: true },
+  { name: 'Taylor, Marcus', callsign: '...', type: 'N/A', status: 'N/A', team: '', phone: '', avail: true },
+];
+
+const INCIDENT_TYPES = [
+  { id: 13, type: 'EmergNet', group: 'RACES', sev: 'Critical', color: 'red', pattern: '(.*)', sort: 1 },
+  { id: 1, type: 'examp1', group: 'grp 1', sev: 'Normal', color: 'gray', pattern: '', sort: 1 },
+  { id: 2, type: 'examp2', group: 'grp 2', sev: 'Normal', color: 'gray', pattern: '', sort: 2 },
+  { id: 14, type: 'MsgRelay', group: 'RACES', sev: 'Normal', color: 'gray', pattern: '(.*)', sort: 2 },
+  { id: 15, type: 'CommFail', group: 'RACES', sev: 'Elevated', color: 'yellow', pattern: '(.*)', sort: 3 },
+  { id: 18, type: 'WxSpotter', group: 'RACES', sev: 'Elevated', color: 'blue', pattern: '(.*)', sort: 6 }
 ];
 
 export default function DispatcherConsole() {
-  const [activeTab, setActiveTab] = useState('dispatch');
-
-  // Global State
-  const [incidents, setIncidents] = useState([
-    { id: 'INC-832', nature: 'Motor Vehicle Collision', location: 'I-95 Northbound MM 42', priority: 'High', status: 'Dispatched', units: ['MEDIC 51'], lat: 35.7796, lng: -78.6382 }
-  ]);
-  const [units, setUnits] = useState([
-    { id: 'MEDIC 51', type: 'EMS', status: 'En Route', lat: 35.7820, lng: -78.6400, capabilities: 'ALS, Bariatric' },
-    { id: 'ENGINE 12', type: 'FIRE', status: 'Available', lat: 35.7750, lng: -78.6450, capabilities: 'Pumper, Extrication' },
-    { id: 'PATROL 1', type: 'PD', status: 'On Scene', lat: 35.7800, lng: -78.6380, capabilities: 'K9, Radar' },
-    { id: 'RESCUE 9', type: 'FIRE', status: 'Available', lat: 35.7720, lng: -78.6300, capabilities: 'Heavy Rescue' },
-  ]);
-  const [patients, setPatients] = useState([
-    { id: 'PAT-101', incidentId: 'INC-832', name: 'John Doe', age: 45, gender: 'M', condition: 'Critical', transportDest: 'WakeMed Trauma', unit: 'MEDIC 51' },
-    { id: 'PAT-102', incidentId: 'INC-832', name: 'Jane Smith', age: 32, gender: 'F', condition: 'Stable', transportDest: 'Rex Hospital', unit: 'Pending' }
-  ]);
-  const [messages, setMessages] = useState([
-    { id: 1, from: 'System', text: 'Daily system backup completed successfully.', time: '08:00 AM' },
-    { id: 2, from: 'Field Supervisor', text: 'All units be advised, major road work on I-440 starts tonight.', time: '09:15 AM' }
-  ]);
-  const [weatherAlerts] = useState([
-    { id: 'WX-1', title: 'Severe Thunderstorm Warning', area: 'Wake County', expires: '18:45 PM', severity: 'Severe' }
-  ]);
-
-  // Dispatch Forms & Playback
-  const [newCall, setNewCall] = useState({ nature: '', location: '', priority: 'Normal' });
-  const [transcriptions, setTranscriptions] = useState<{id: string, text: string, active: boolean}[]>([]);
-  const [activeScenario, setActiveScenario] = useState(SCENARIOS[0]);
-  const [isPlaying, setIsPlaying] = useState(false);
-  const [playbackTime, setPlaybackTime] = useState(0);
-
-  const locationRef = React.useRef<HTMLInputElement>(null);
-  const natureRef = React.useRef<HTMLInputElement>(null);
-  const priorityRef = React.useRef<HTMLSelectElement>(null);
+  const [time, setTime] = useState(new Date());
+  const [activeTab, setActiveTab] = useState('Situation');
 
   useEffect(() => {
-    const handleKeyDown = (e: KeyboardEvent) => {
-      if (e.ctrlKey || e.metaKey) return;
-      if (e.altKey) {
-        switch (e.key.toLowerCase()) {
-          case 'l': e.preventDefault(); locationRef.current?.focus(); break;
-          case 'n': e.preventDefault(); natureRef.current?.focus(); break;
-          case 'p': e.preventDefault(); priorityRef.current?.focus(); break;
-          case 's': e.preventDefault(); setIsPlaying(p => !p); break;
-        }
-      }
-    };
-    window.addEventListener('keydown', handleKeyDown);
-    return () => window.removeEventListener('keydown', handleKeyDown);
+    const timer = setInterval(() => setTime(new Date()), 1000);
+    return () => clearInterval(timer);
   }, []);
 
-  useEffect(() => {
-    if (!isPlaying) return;
-    const interval = setInterval(() => {
-      setPlaybackTime(prev => {
-        const nextTime = prev + 1;
-        const currentEvents = activeScenario.events.filter(e => e.t === nextTime);
-        currentEvents.forEach(evt => {
-          if (evt.type === 'RADIO') {
-             const newTx = { id: Math.random().toString(), text: evt.text!, active: true };
-             setTranscriptions(curr => [...curr.slice(-3), newTx]);
-             setTimeout(() => {
-               setTranscriptions(curr => curr.map(tx => tx.id === newTx.id ? { ...tx, active: false } : tx));
-             }, 8000);
-          } else if (evt.type === 'UPDATE_UNIT' && evt.unit && evt.status) {
-             setUnits(curr => curr.map(u => u.id === evt.unit ? { ...u, status: evt.status as string } : u));
-          }
-        });
-        if (nextTime >= activeScenario.duration) setIsPlaying(false);
-        return nextTime;
-      });
-    }, 1000);
-    return () => clearInterval(interval);
-  }, [isPlaying, activeScenario]);
-
-  const handleCreateCall = (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!newCall.nature || !newCall.location) return;
-    const newId = `INC-${Math.floor(Math.random() * 900) + 100}`;
-    const simLat = 35.7796 + (Math.random() * 0.04 - 0.02);
-    const simLng = -78.6382 + (Math.random() * 0.04 - 0.02);
-
-    setIncidents([{ 
-      id: newId, nature: newCall.nature, location: newCall.location, 
-      priority: newCall.priority, status: 'Pending', units: [],
-      lat: simLat, lng: simLng
-    }, ...incidents]);
-    setNewCall({ nature: '', location: '', priority: 'Normal' });
-  };
-
-  const cycleUnitStatus = (unitId: string) => {
-    const statuses = ['Available', 'Dispatched', 'En Route', 'On Scene', 'Transporting', 'Cleared'];
-    setUnits(units.map(u => {
-      if (u.id === unitId) {
-        const nextIdx = (statuses.indexOf(u.status) + 1) % statuses.length;
-        return { ...u, status: statuses[nextIdx] };
-      }
-      return u;
-    }));
-  };
-
-  const getStatusColor = (status: string) => {
-    switch (status) {
-      case 'Available': return 'bg-green-500/20 text-green-400 border-green-500/30';
-      case 'Dispatched': return 'bg-yellow-500/20 text-yellow-400 border-yellow-500/30';
-      case 'En Route': return 'bg-blue-500/20 text-blue-400 border-blue-500/30';
-      case 'On Scene': return 'bg-red-500/20 text-red-400 border-red-500/30';
-      default: return 'bg-slate-500/20 text-slate-400 border-slate-500/30';
-    }
-  };
-
   return (
-    <div className="min-h-screen bg-slate-950 text-slate-200 font-sans flex h-screen overflow-hidden">
+    <div className="min-h-screen bg-[#1e293b] text-slate-200 font-sans flex flex-col h-screen overflow-hidden">
       
-      {/* SIDEBAR NAVIGATION */}
-      <div className="w-20 bg-slate-900 border-r border-slate-800 flex flex-col items-center py-6 shrink-0 z-20">
-        <div className="bg-blue-600 p-2 rounded-lg mb-8">
-          <ShieldAlert size={28} className="text-white" />
+      {/* TOP NAVBAR */}
+      <div className="h-12 bg-[#0f172a] border-b border-slate-700 flex items-center justify-between px-4 shrink-0 text-sm">
+        <div className="flex items-center gap-6">
+          <div className="flex items-center gap-2 font-bold text-white">
+            <ShieldAlert size={20} className="text-blue-500" />
+            <span>Tickets <span className="text-slate-400 font-normal text-xs">v4.0.0-dev</span></span>
+          </div>
+          
+          <div className="flex items-center gap-1">
+            <NavBtn icon={<Monitor size={14}/>} label="Situation" active={activeTab === 'Situation'} onClick={() => setActiveTab('Situation')} />
+            <NavBtn icon={<Maximize size={14}/>} label="Full Screen" />
+            <NavBtn icon={<PlusCircle size={14}/>} label="New" highlight active={activeTab === 'New'} onClick={() => setActiveTab('New')} />
+            <NavBtn icon={<Truck size={14}/>} label="Units" />
+            <NavBtn icon={<Building2 size={14}/>} label="Fac's" />
+            <NavBtn icon={<Search size={14}/>} label="Search" />
+            <NavBtn icon={<Users size={14}/>} label="Personnel" active={activeTab === 'Personnel'} onClick={() => setActiveTab('Personnel')} />
+            <NavBtn icon={<Calendar size={14}/>} label="Scheduling" active={activeTab === 'Scheduling'} onClick={() => setActiveTab('Scheduling')} />
+            <NavBtn icon={<FileText size={14}/>} label="Reports" />
+            <NavBtn icon={<Settings size={14}/>} label="Config" active={activeTab === 'Config'} onClick={() => setActiveTab('Config')} />
+            <NavBtn icon={<BookOpen size={14}/>} label="SOP" />
+            <NavBtn icon={<Phone size={14}/>} label="Contacts" />
+          </div>
         </div>
         
-        <div className="flex flex-col gap-4 w-full px-3">
-          <NavItem icon={<Activity />} id="dispatch" activeTab={activeTab} setActiveTab={setActiveTab} label="Dispatch" />
-          <NavItem icon={<Users />} id="patients" activeTab={activeTab} setActiveTab={setActiveTab} label="Patients" />
-          <NavItem icon={<MessageSquare />} id="messages" activeTab={activeTab} setActiveTab={setActiveTab} label="Comms" />
-          <NavItem icon={<CloudLightning />} id="weather" activeTab={activeTab} setActiveTab={setActiveTab} label="Weather" />
+        <div className="flex items-center gap-4">
+          <div className="flex items-center gap-2">
+            <div className="w-2 h-2 rounded-full bg-slate-500"></div>
+            <span className="font-mono text-slate-300">{time.toLocaleTimeString('en-US', { hour12: false })}</span>
+          </div>
+          <button className="p-1.5 hover:bg-slate-800 rounded text-slate-400"><Volume2 size={16}/></button>
+          <div className="flex items-center bg-slate-800 rounded p-0.5">
+            <button className="p-1 bg-yellow-500 text-slate-900 rounded"><Sun size={14}/></button>
+            <button className="p-1 text-slate-400 hover:text-white"><Moon size={14}/></button>
+          </div>
+          <div className="flex items-center gap-2 text-slate-300 hover:text-white cursor-pointer pl-2 border-l border-slate-700">
+            <User size={16} />
+            <span>admin (Super)</span>
+          </div>
+          <button className="p-1.5 hover:bg-red-500/20 text-red-400 rounded"><LogOut size={16}/></button>
         </div>
       </div>
 
-      {/* MAIN CONTENT AREA */}
-      <div className="flex-1 flex flex-col min-w-0">
-        
-        {/* TOP BAR / TICKER */}
-        <div className="h-12 bg-slate-900 border-b border-slate-800 flex items-center px-4 justify-between shrink-0">
-          <div className="flex items-center gap-4">
-            <div className="text-xs font-bold text-slate-400 uppercase tracking-widest">OpenCAD SYSTEM</div>
-            <div className="flex items-center gap-2 text-red-400 bg-red-400/10 px-3 py-1 rounded-full border border-red-400/20 text-xs font-bold">
-              <AlertTriangle size={12} />
-              {weatherAlerts[0]?.title} - {weatherAlerts[0]?.area}
-            </div>
-          </div>
-          <div className="flex items-center gap-4 text-sm font-medium">
-            <div className="flex items-center gap-2 text-green-400">
-              <div className="w-2 h-2 rounded-full bg-green-400 animate-pulse" />
-              Connected
-            </div>
-            <div className="text-slate-400 font-mono">{new Date().toLocaleTimeString()}</div>
-          </div>
+      {/* DYNAMIC CONTENT */}
+      <div className="flex-1 flex overflow-hidden">
+        {activeTab === 'Situation' && <DashboardTab />}
+        {activeTab === 'New' && <NewIncidentTab />}
+        {activeTab === 'Personnel' && <PersonnelTab />}
+        {activeTab === 'Config' && <ConfigTab />}
+        {activeTab === 'Scheduling' && <SchedulingTab />}
+      </div>
+
+    </div>
+  );
+}
+
+// --- TABS ---
+
+function DashboardTab() {
+  return (
+    <div className="flex-1 p-2 flex flex-col gap-2 bg-[#0f172a] overflow-hidden">
+      <div className="h-8 bg-[#1e293b] border border-slate-700 flex items-center px-4 shrink-0 gap-4 text-sm">
+        <span className="text-slate-400">Widgets:</span>
+        <div className="flex items-center gap-1">
+          <button className="p-1 bg-slate-700 hover:bg-slate-600 rounded text-yellow-400"><RefreshCw size={14}/></button>
+          <button className="p-1 hover:bg-slate-700 rounded text-slate-400">←</button>
+          <button className="p-1 bg-blue-600 hover:bg-blue-500 rounded text-white"><BookOpen size={14}/></button>
         </div>
-
-        {/* TAB CONTENT */}
-        <div className="flex-1 p-4 overflow-hidden relative">
-          
-          {/* DISPATCH TAB */}
-          {activeTab === 'dispatch' && (
-            <div className="h-full flex flex-col gap-4">
-              <div className="bg-slate-900 border border-slate-800 rounded-xl p-3 flex items-center justify-between shrink-0">
-                <div className="flex items-center gap-4">
-                  <div className="flex items-center gap-2 bg-slate-950 rounded-lg px-3 py-1.5 border border-slate-800">
-                    <Target size={16} className="text-blue-400" />
-                    <select className="bg-transparent text-sm font-bold text-white outline-none">
-                      {SCENARIOS.map(s => <option key={s.id} value={s.id}>{s.name}</option>)}
-                    </select>
-                  </div>
-                  <div className="flex items-center gap-2">
-                    <button onClick={() => setIsPlaying(!isPlaying)} className={`p-2 rounded-lg transition-colors ${isPlaying ? 'bg-amber-500/20 text-amber-400' : 'bg-green-500/20 text-green-400'}`}>
-                      {isPlaying ? <Pause size={18} /> : <Play size={18} />}
-                    </button>
-                    <div className="font-mono font-bold text-xl ml-2 w-16 text-center text-blue-400">
-                      {Math.floor(playbackTime / 60).toString().padStart(2, '0')}:{(playbackTime % 60).toString().padStart(2, '0')}
-                    </div>
-                  </div>
-                </div>
-              </div>
-
-              <div className="flex-1 grid grid-cols-12 gap-4 min-h-0">
-                {/* LEFT: Entry */}
-                <div className="col-span-3 flex flex-col gap-4 min-h-0">
-                  <div className="bg-slate-900 border border-slate-800 rounded-xl p-4 flex flex-col shrink-0 h-[220px]">
-                    <div className="flex items-center gap-2 text-blue-400 font-bold mb-3 uppercase tracking-wider text-xs border-b border-slate-800 pb-2">
-                      <Mic size={16} className={isPlaying ? "animate-pulse" : ""} /> Live Radio Feed
-                    </div>
-                    <div className="flex-1 overflow-y-auto flex flex-col gap-2">
-                      {transcriptions.length === 0 && <div className="h-full flex items-center justify-center text-slate-600 text-sm italic">Standby...</div>}
-                      {transcriptions.map(tx => (
-                        <div key={tx.id} className={`p-2 rounded bg-slate-800 text-sm border-l-2 ${tx.active ? 'border-blue-500 text-white' : 'border-slate-700 text-slate-400'}`}>
-                          {tx.text}
-                        </div>
-                      ))}
-                    </div>
-                  </div>
-
-                  <div className="bg-slate-900 border border-slate-800 rounded-xl p-4 flex-1 flex flex-col overflow-y-auto">
-                    <div className="flex items-center gap-2 text-slate-300 font-bold mb-4 uppercase tracking-wider text-xs border-b border-slate-800 pb-2">
-                      <Phone size={16} /> New Call Entry
-                    </div>
-                    <form onSubmit={handleCreateCall} className="flex flex-col gap-4 flex-1">
-                      <div>
-                        <label className="block text-xs font-bold text-slate-400 mb-1">LOCATION <span className="bg-slate-800 px-1 rounded">Alt+L</span></label>
-                        <input ref={locationRef} type="text" value={newCall.location} onChange={e => setNewCall({...newCall, location: e.target.value})} className="w-full bg-slate-950 border border-slate-700 rounded p-2 text-sm text-white" required />
-                      </div>
-                      <div>
-                        <label className="block text-xs font-bold text-slate-400 mb-1">NATURE / TYPE <span className="bg-slate-800 px-1 rounded">Alt+N</span></label>
-                        <input ref={natureRef} type="text" value={newCall.nature} onChange={e => setNewCall({...newCall, nature: e.target.value})} className="w-full bg-slate-950 border border-slate-700 rounded p-2 text-sm text-white" required />
-                      </div>
-                      <div>
-                        <label className="block text-xs font-bold text-slate-400 mb-1">PRIORITY <span className="bg-slate-800 px-1 rounded">Alt+P</span></label>
-                        <select ref={priorityRef} value={newCall.priority} onChange={e => setNewCall({...newCall, priority: e.target.value})} className="w-full bg-slate-950 border border-slate-700 rounded p-2 text-sm text-white">
-                          <option>Low</option><option>Normal</option><option>High</option><option>Critical</option>
-                        </select>
-                      </div>
-                      <div className="mt-auto pt-4">
-                        <button type="submit" className="w-full bg-blue-600 hover:bg-blue-500 text-white font-bold py-3 rounded transition-colors flex items-center justify-center gap-2">
-                          <CheckCircle size={18} /> CREATE INCIDENT
-                        </button>
-                      </div>
-                    </form>
-                  </div>
-                </div>
-
-                {/* CENTER: Map & Incidents */}
-                <div className="col-span-6 flex flex-col gap-4 min-h-0">
-                  <div className="bg-slate-900 border border-slate-800 rounded-xl overflow-hidden shrink-0 h-[45%] relative">
-                     <div className="absolute top-2 left-2 bg-slate-950/80 backdrop-blur px-3 py-1.5 rounded-lg border border-slate-700/50 flex items-center gap-2 z-[400]">
-                       <MapIcon size={14} className="text-slate-400" />
-                       <span className="text-xs font-bold text-slate-300">LIVE MAPPING (OSM)</span>
-                     </div>
-                     <div className="w-full h-full bg-[#0a0f1a] relative z-0">
-                        <MapContainer center={[35.7796, -78.6382]} zoom={13} style={{ height: '100%', width: '100%', backgroundColor: '#0a0f1a' }}>
-                          <TileLayer
-                            url="https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png"
-                          />
-                          {incidents.map(inc => (
-                             <Marker key={inc.id} position={[inc.lat, inc.lng]}>
-                               <Popup className="text-slate-900 font-bold">{inc.id}: {inc.nature}</Popup>
-                             </Marker>
-                          ))}
-                          {units.map(u => (
-                             <Marker key={u.id} position={[u.lat, u.lng]}>
-                               <Popup className="text-slate-900 font-bold">{u.id} ({u.status})</Popup>
-                             </Marker>
-                          ))}
-                        </MapContainer>
-                     </div>
-                  </div>
-
-                  <div className="bg-slate-900 border border-slate-800 rounded-xl p-4 flex-1 flex flex-col min-h-0">
-                    <div className="flex items-center gap-2 text-slate-300 font-bold mb-4 uppercase tracking-wider text-xs border-b border-slate-800 pb-2">
-                      <AlertTriangle size={16} /> Active Incidents ({incidents.length})
-                    </div>
-                    <div className="flex-1 overflow-y-auto pr-2 flex flex-col gap-3">
-                        {incidents.map(inc => (
-                          <div key={inc.id} className="bg-slate-950 border border-slate-800 rounded-lg p-3">
-                            <div className="flex justify-between items-start mb-2">
-                              <span className={`px-2 py-0.5 rounded text-[10px] font-black uppercase ${inc.priority === 'Critical' ? 'bg-red-500 text-white' : 'bg-slate-700 text-slate-300'}`}>
-                                {inc.priority} - {inc.id}
-                              </span>
-                              <span className="text-xs font-bold text-blue-400 bg-blue-400/10 px-2 py-0.5 rounded">{inc.status}</span>
-                            </div>
-                            <h3 className="font-bold text-white mb-1">{inc.nature}</h3>
-                            <p className="text-slate-400 text-sm">{inc.location}</p>
-                          </div>
-                        ))}
-                    </div>
-                  </div>
-                </div>
-
-                {/* RIGHT: Units */}
-                <div className="col-span-3 bg-slate-900 border border-slate-800 rounded-xl p-4 flex flex-col min-h-0">
-                  <div className="flex items-center justify-between mb-4 border-b border-slate-800 pb-2">
-                    <div className="flex items-center gap-2 text-slate-300 font-bold uppercase tracking-wider text-xs">
-                      <Radio size={16} /> Units Board
-                    </div>
-                  </div>
-                  
-                  <div className="flex-1 overflow-y-auto flex flex-col gap-2">
-                      {units.map(unit => (
-                        <div key={unit.id} className="bg-slate-950 border border-slate-800 rounded-lg p-3 flex flex-col gap-2">
-                          <div className="flex justify-between items-center">
-                             <span className="font-bold text-white text-sm">{unit.id}</span>
-                             <span className="text-[10px] text-slate-500">{unit.type}</span>
-                          </div>
-                          <div className="text-[10px] text-slate-400">{unit.capabilities}</div>
-                          <button onClick={() => cycleUnitStatus(unit.id)} className={`w-full text-xs font-bold py-1.5 mt-1 rounded border transition-colors ${getStatusColor(unit.status)}`}>
-                            {unit.status.toUpperCase()}
-                          </button>
-                        </div>
-                      ))}
-                  </div>
-                </div>
-              </div>
-            </div>
-          )}
-
-          {/* PATIENTS TAB */}
-          {activeTab === 'patients' && (
-            <div className="h-full flex flex-col gap-4">
-              <div className="bg-slate-900 border border-slate-800 rounded-xl p-6">
-                <h2 className="text-xl font-bold text-white mb-2 flex items-center gap-2"><Users className="text-blue-500"/> Patient Tracking System</h2>
-                <p className="text-slate-400 text-sm">Monitor triage status and transport destinations across all active incidents.</p>
-              </div>
-              
-              <div className="bg-slate-900 border border-slate-800 rounded-xl flex-1 overflow-hidden flex flex-col">
-                 <div className="grid grid-cols-6 gap-4 p-4 border-b border-slate-800 text-xs font-bold text-slate-400 uppercase">
-                    <div>Patient ID</div>
-                    <div>Incident</div>
-                    <div>Demographics</div>
-                    <div>Condition</div>
-                    <div>Transport Unit</div>
-                    <div>Destination</div>
-                 </div>
-                 <div className="flex-1 overflow-y-auto p-4 flex flex-col gap-2">
-                    {patients.map(p => (
-                      <div key={p.id} className="grid grid-cols-6 gap-4 p-4 bg-slate-950 rounded-lg border border-slate-800 items-center">
-                         <div className="font-mono text-blue-400 font-bold">{p.id}</div>
-                         <div className="text-slate-300">{p.incidentId}</div>
-                         <div>
-                            <div className="text-white font-bold">{p.name}</div>
-                            <div className="text-xs text-slate-400">{p.age} y/o {p.gender}</div>
-                         </div>
-                         <div>
-                            <span className={`px-2 py-1 rounded text-xs font-bold ${p.condition === 'Critical' ? 'bg-red-500/20 text-red-400' : 'bg-yellow-500/20 text-yellow-400'}`}>
-                              {p.condition}
-                            </span>
-                         </div>
-                         <div className="text-slate-300 font-bold">{p.unit}</div>
-                         <div className="text-slate-300">{p.transportDest}</div>
-                      </div>
-                    ))}
-                 </div>
-              </div>
-            </div>
-          )}
-
-          {/* COMMUNICATIONS & WEATHER TAB */}
-          {activeTab === 'messages' && (
-            <div className="h-full flex gap-4">
-              <div className="w-2/3 bg-slate-900 border border-slate-800 rounded-xl flex flex-col">
-                <div className="p-4 border-b border-slate-800 flex items-center gap-2">
-                  <MessageSquare className="text-blue-500" />
-                  <h2 className="font-bold text-white">Inter-Agency Communications</h2>
-                </div>
-                <div className="flex-1 p-4 overflow-y-auto flex flex-col gap-4">
-                   {messages.map(m => (
-                     <div key={m.id} className="bg-slate-950 border border-slate-800 p-4 rounded-lg">
-                        <div className="flex justify-between items-center mb-2">
-                           <span className="font-bold text-blue-400">{m.from}</span>
-                           <span className="text-xs text-slate-500">{m.time}</span>
-                        </div>
-                        <p className="text-slate-300">{m.text}</p>
-                     </div>
-                   ))}
-                </div>
-                <div className="p-4 border-t border-slate-800 bg-slate-950/50">
-                   <div className="flex gap-2">
-                     <input type="text" placeholder="Type a message to all units..." className="flex-1 bg-slate-900 border border-slate-700 rounded p-2 text-sm text-white focus:outline-none focus:border-blue-500" />
-                     <button className="bg-blue-600 hover:bg-blue-500 text-white px-4 py-2 rounded font-bold transition-colors">Send</button>
-                   </div>
-                </div>
-              </div>
-              
-              <div className="w-1/3 flex flex-col gap-4">
-                 <div className="bg-slate-900 border border-slate-800 rounded-xl p-4 flex-1">
-                   <div className="flex items-center gap-2 border-b border-slate-800 pb-3 mb-3">
-                     <CloudLightning className="text-yellow-500" />
-                     <h2 className="font-bold text-white">NWS Weather Alerts</h2>
-                   </div>
-                   <div className="flex flex-col gap-3">
-                     {weatherAlerts.map(wx => (
-                       <div key={wx.id} className="bg-red-500/10 border border-red-500/30 p-3 rounded-lg">
-                         <div className="font-bold text-red-400 mb-1">{wx.title}</div>
-                         <div className="text-sm text-slate-300">{wx.area}</div>
-                         <div className="text-xs text-slate-500 mt-2">Expires: {wx.expires}</div>
-                       </div>
-                     ))}
-                   </div>
-                 </div>
-              </div>
-            </div>
-          )}
-          
-          {/* WEATHER TAB ALIAS */}
-          {activeTab === 'weather' && (
-             <div className="h-full flex flex-col items-center justify-center bg-slate-900 border border-slate-800 rounded-xl">
-                <CloudLightning size={48} className="text-yellow-500 mb-4" />
-                <h2 className="text-2xl font-bold text-white mb-2">Weather & Alerts</h2>
-                <p className="text-slate-400">See the Communications tab for aggregated weather and messaging.</p>
-                <button onClick={() => setActiveTab('messages')} className="mt-4 bg-blue-600 hover:bg-blue-500 text-white px-6 py-2 rounded-lg font-bold">Go to Comms</button>
+      </div>
+      <div className="flex-1 flex gap-2 overflow-hidden">
+        <div className="flex-[4] flex flex-col gap-2 min-w-0">
+          <Widget title="Incidents" icon={<AlertTriangle size={14}/>} flex="flex-[4]">
+            <table className="w-full text-xs text-left">
+              <thead className="text-slate-400 border-b border-slate-700 bg-slate-800/50 sticky top-0">
+                <tr>
+                  <th className="p-2 font-bold">ID</th>
+                  <th className="p-2 font-bold">SCOPE</th>
+                  <th className="p-2 font-bold">TYPE</th>
+                  <th className="p-2 font-bold">LOCATION</th>
+                  <th className="p-2 font-bold">SEV</th>
+                  <th className="p-2 font-bold">UNITS</th>
+                  <th className="p-2 font-bold">UPDATED</th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-slate-700/50">
+                {MOCK_INCIDENTS.map((inc, i) => (
+                  <tr key={i} className="hover:bg-slate-700/30">
+                    <td className="p-2 text-blue-400">{inc.id}</td>
+                    <td className="p-2">{inc.scope}</td>
+                    <td className="p-2">{inc.type}</td>
+                    <td className="p-2 truncate max-w-[200px]">{inc.location}</td>
+                    <td className="p-2">
+                      <span className={`px-2 py-0.5 rounded font-bold text-black ${inc.sev === 1 ? 'bg-yellow-400' : 'bg-green-500'}`}>
+                        {inc.sev}
+                      </span>
+                    </td>
+                    <td className="p-2">{inc.units}</td>
+                    <td className="p-2 text-slate-400">{inc.updated}</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </Widget>
+        </div>
+        <div className="w-24 flex flex-col gap-2 shrink-0">
+          <Widget title="Controls" icon={<Settings size={14}/>} flex="flex-[1]">
+             <div className="grid grid-cols-2 gap-1 p-1">
+               <CtrlBtn icon={<CheckSquare size={16}/>} label="ASSIGNED" />
+               <CtrlBtn icon={<MapIcon size={16}/>} label="ROADS" />
              </div>
-          )}
-
+          </Widget>
+        </div>
+        <div className="flex-[5] flex flex-col gap-2 min-w-0">
+          <Widget title="Map" icon={<MapIcon size={14}/>} flex="flex-1 min-h-[300px]">
+             <div className="w-full h-full relative z-0">
+                <MapContainer center={[44.9778, -93.2650]} zoom={11} style={{ height: '100%', width: '100%', backgroundColor: '#f1f5f9' }}>
+                  <TileLayer url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png" />
+                </MapContainer>
+             </div>
+          </Widget>
         </div>
       </div>
     </div>
   );
 }
 
-function NavItem({ icon, id, activeTab, setActiveTab, label }: { icon: React.ReactNode, id: string, activeTab: string, setActiveTab: (id: string) => void, label: string }) {
-  const isActive = activeTab === id;
+function NewIncidentTab() {
   return (
-    <button 
-      onClick={() => setActiveTab(id)}
-      className={`flex flex-col items-center justify-center gap-1 w-full p-3 rounded-xl transition-all duration-200 ${isActive ? 'bg-blue-600/20 text-blue-400' : 'text-slate-500 hover:bg-slate-800 hover:text-slate-300'}`}
-    >
+    <div className="flex-1 bg-[#151e2e] p-4 flex flex-col gap-4 overflow-y-auto">
+      <div className="flex justify-between items-center bg-[#1e293b] p-3 rounded shadow">
+        <h2 className="text-xl text-white font-semibold flex items-center gap-2">
+          <PlusCircle size={20} className="text-blue-500" /> New Incident
+        </h2>
+        <div className="flex gap-2">
+          <button className="px-4 py-1.5 border border-slate-600 rounded text-slate-300 hover:bg-slate-700 flex items-center gap-2 text-sm">
+            <RefreshCw size={14}/> Reset
+          </button>
+          <button className="px-4 py-1.5 bg-green-600 hover:bg-green-500 text-white rounded font-medium flex items-center gap-2 text-sm shadow">
+            <Check size={16} /> Submit Incident
+          </button>
+        </div>
+      </div>
+
+      <div className="flex flex-1 gap-4">
+        {/* LEFT COLUMN */}
+        <div className="flex-[1] flex flex-col gap-4">
+          <FormSection title="Classification" icon={<AlertTriangle size={16}/>} badge="Required">
+            <div className="grid grid-cols-2 gap-4 mb-4">
+              <div>
+                <label className="block text-xs text-slate-400 mb-1">Incident Type <span className="text-red-500">*</span></label>
+                <select className="w-full bg-[#0f172a] border border-slate-700 rounded p-2 text-sm text-slate-200 outline-none focus:border-blue-500">
+                  <option>— Select type —</option>
+                  <option>WxSpotter</option>
+                  <option>EmergNet</option>
+                </select>
+              </div>
+              <div>
+                <label className="block text-xs text-slate-400 mb-1">Severity</label>
+                <select className="w-full bg-[#0f172a] border border-slate-700 rounded p-2 text-sm text-slate-200 outline-none focus:border-blue-500">
+                  <option>Normal</option>
+                  <option>Elevated</option>
+                  <option>Critical</option>
+                </select>
+              </div>
+            </div>
+            <div className="mb-4">
+              <label className="block text-xs text-slate-400 mb-1">Incident Name / Scope <span className="text-red-500">*</span></label>
+              <input type="text" placeholder="Brief summary of the incident" className="w-full bg-[#0f172a] border border-slate-700 rounded p-2 text-sm text-slate-200 outline-none focus:border-blue-500" />
+            </div>
+            <div className="mb-4">
+              <label className="block text-xs text-slate-400 mb-1">Description <span className="text-red-500">*</span></label>
+              <textarea rows={4} placeholder="Detailed description of the incident..." className="w-full bg-[#0f172a] border border-blue-500 rounded p-2 text-sm text-slate-200 outline-none"></textarea>
+            </div>
+            <div className="grid grid-cols-2 gap-4">
+              <div>
+                <label className="block text-xs text-slate-400 mb-1">Signal</label>
+                <select className="w-full bg-[#0f172a] border border-slate-700 rounded p-2 text-sm text-slate-200 outline-none">
+                  <option>— None —</option>
+                </select>
+              </div>
+              <div>
+                <label className="block text-xs text-slate-400 mb-1">Major Incident</label>
+                <div className="flex">
+                  <select className="flex-1 bg-[#0f172a] border border-slate-700 rounded-l p-2 text-sm text-slate-200 outline-none">
+                    <option>— None —</option>
+                  </select>
+                  <button className="bg-slate-700 px-3 border border-slate-700 rounded-r hover:bg-slate-600 text-blue-400 font-medium text-sm">+ New</button>
+                </div>
+              </div>
+            </div>
+          </FormSection>
+
+          <FormSection title="Location" icon={<MapIcon size={16}/>}>
+            <div className="flex gap-2 mb-4">
+               <div className="flex-1">
+                 <label className="block text-xs text-slate-400 mb-1">Street Address</label>
+                 <div className="flex">
+                    <input type="text" defaultValue="123 Main St" className="flex-1 bg-[#0f172a] border border-slate-700 rounded-l p-2 text-sm text-slate-200 outline-none" />
+                    <button className="bg-slate-700 px-3 border border-slate-700 rounded-r hover:bg-slate-600 text-sm flex items-center gap-1"><Search size={14}/> Lookup</button>
+                 </div>
+               </div>
+            </div>
+            <div className="grid grid-cols-3 gap-4 mb-4">
+              <div>
+                <label className="block text-xs text-slate-400 mb-1">City</label>
+                <input type="text" className="w-full bg-[#0f172a] border border-slate-700 rounded p-2 text-sm text-slate-200" />
+              </div>
+              <div>
+                <label className="block text-xs text-slate-400 mb-1">State</label>
+                <select className="w-full bg-[#0f172a] border border-slate-700 rounded p-2 text-sm text-slate-200"><option>—</option></select>
+              </div>
+              <div>
+                <label className="block text-xs text-slate-400 mb-1">Area / About / Cross St</label>
+                <input type="text" placeholder="Near intersection of..." className="w-full bg-[#0f172a] border border-slate-700 rounded p-2 text-sm text-slate-200" />
+              </div>
+            </div>
+            <div className="grid grid-cols-2 gap-4 mb-2">
+              <div>
+                <label className="block text-xs text-slate-400 mb-1">Coordinates</label>
+                <div className="flex items-center gap-2 bg-[#0f172a] border border-slate-700 rounded p-1">
+                   <span className="text-xs text-slate-500 pl-2">Lat</span>
+                   <input type="text" defaultValue="44.9778" className="w-20 bg-transparent text-sm text-white outline-none" />
+                   <span className="text-xs text-slate-500">Lng</span>
+                   <input type="text" defaultValue="-93.2650" className="w-20 bg-transparent text-sm text-white outline-none" />
+                </div>
+              </div>
+              <div>
+                <label className="block text-xs text-slate-400 mb-1">Destination Address</label>
+                <input type="text" placeholder="Transport destination (if applicable)" className="w-full bg-[#0f172a] border border-slate-700 rounded p-2 text-sm text-slate-200" />
+              </div>
+            </div>
+          </FormSection>
+          
+          <FormSection title="Caller / Contact" icon={<User size={16}/>}>
+             <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-xs text-slate-400 mb-1">Reported By</label>
+                  <input type="text" placeholder="Caller name" className="w-full bg-[#0f172a] border border-slate-700 rounded p-2 text-sm text-slate-200" />
+                </div>
+                <div>
+                  <label className="block text-xs text-slate-400 mb-1">Phone Number</label>
+                  <input type="text" placeholder="(612) 555-1234" className="w-full bg-[#0f172a] border border-slate-700 rounded p-2 text-sm text-slate-200" />
+                </div>
+             </div>
+          </FormSection>
+        </div>
+
+        {/* RIGHT COLUMN */}
+        <div className="flex-[1] flex flex-col gap-4">
+           <div className="bg-[#1e293b] rounded border border-slate-700 flex flex-col h-[350px] overflow-hidden">
+             <div className="bg-slate-800 p-2 flex justify-between items-center text-sm font-medium border-b border-slate-700">
+               <div className="flex items-center gap-2"><MapIcon size={16}/> Location Map</div>
+               <span className="text-xs text-slate-400">Click to set incident location</span>
+             </div>
+             <div className="flex-1 relative bg-slate-100 z-0">
+               <MapContainer center={[44.9778, -93.2650]} zoom={11} style={{ height: '100%', width: '100%' }}>
+                  <TileLayer url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png" />
+               </MapContainer>
+             </div>
+           </div>
+
+           <div className="bg-[#1e293b] rounded border border-slate-700 flex flex-col flex-1">
+             <div className="bg-slate-800 p-2 flex justify-between items-center text-sm font-medium border-b border-slate-700">
+               <div className="flex items-center gap-2"><Users size={16}/> Assign Responders</div>
+               <span className="text-xs bg-blue-600 text-white px-2 py-0.5 rounded-full">0 selected</span>
+             </div>
+             <div className="p-2 border-b border-slate-700">
+               <input type="text" placeholder="Search units..." className="w-full bg-[#0f172a] border border-slate-700 rounded p-2 text-sm text-slate-200" />
+             </div>
+             <div className="flex-1 overflow-y-auto p-2 flex flex-col gap-1">
+               {['CERT Team A', 'Engine 2', 'Medic 1', 'Medic 2', 'Net Control', 'Patrol 1', 'Patrol 2', 'Rescue 1', 'Tanker 1', 'Test Unit 1'].map(unit => (
+                 <div key={unit} className="flex items-center justify-between p-2 hover:bg-slate-800 rounded border border-transparent hover:border-slate-700 cursor-pointer">
+                   <div className="flex items-center gap-3">
+                     <input type="checkbox" className="w-4 h-4 rounded bg-slate-900 border-slate-600" />
+                     <span className="text-sm text-slate-200 font-medium">{unit}</span>
+                   </div>
+                   <span className="text-[10px] bg-green-900/50 text-green-400 border border-green-800 px-2 py-0.5 rounded uppercase font-bold">Available</span>
+                 </div>
+               ))}
+             </div>
+           </div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function PersonnelTab() {
+  return (
+    <div className="flex-1 bg-[#151e2e] flex flex-col overflow-hidden">
+      <div className="bg-[#1e293b] p-3 border-b border-slate-700 flex justify-between items-center shadow-sm z-10">
+        <h2 className="text-xl text-white font-semibold flex items-center gap-2">
+          <User size={20} className="text-blue-500" /> Personnel Roster <span className="bg-slate-700 text-xs px-2 py-0.5 rounded text-slate-300">9</span>
+        </h2>
+        <div className="flex gap-2">
+          <button className="px-4 py-1.5 bg-blue-600 hover:bg-blue-500 text-white rounded text-sm font-medium flex items-center gap-2">
+            <User size={14} /> New Member
+          </button>
+          <button className="px-4 py-1.5 border border-slate-600 rounded text-slate-300 hover:bg-slate-700 flex items-center gap-2 text-sm">
+            Dashboard
+          </button>
+          <button className="px-4 py-1.5 border border-slate-600 rounded text-slate-300 hover:bg-slate-700 flex items-center gap-2 text-sm">
+            <Printer size={14} /> Print
+          </button>
+        </div>
+      </div>
+
+      <div className="p-3 bg-[#1e293b] border-b border-slate-700 flex items-center gap-4 text-sm z-10">
+         <div className="relative flex-1 max-w-md">
+           <Search size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-500" />
+           <input type="text" placeholder="Search by name, callsign, phone, email..." className="w-full bg-[#0f172a] border border-slate-700 rounded-full pl-9 pr-4 py-1.5 text-slate-200 outline-none focus:border-blue-500" />
+         </div>
+         <div className="flex items-center gap-2 text-slate-400">
+           Status: <span className="bg-blue-600 text-white px-2 py-0.5 rounded text-xs">All</span>
+         </div>
+         <div className="flex items-center gap-2 text-slate-400">
+           Team: <span className="bg-blue-600 text-white px-2 py-0.5 rounded text-xs">All</span>
+           <span className="bg-slate-800 text-slate-300 px-2 py-0.5 rounded text-xs border border-slate-700">Digital Modes</span>
+           <span className="bg-slate-800 text-slate-300 px-2 py-0.5 rounded text-xs border border-slate-700">HF Radio Team</span>
+         </div>
+         <div className="flex items-center gap-2 text-slate-400">
+           Type: <span className="bg-blue-600 text-white px-2 py-0.5 rounded text-xs">All</span>
+         </div>
+      </div>
+
+      <div className="flex-1 flex p-4 gap-4 overflow-hidden">
+        <div className="flex-[2] bg-[#1e293b] rounded-lg border border-slate-700 overflow-hidden flex flex-col">
+          <table className="w-full text-sm text-left">
+              <thead className="text-slate-400 bg-slate-800/50 sticky top-0 border-b border-slate-700">
+                <tr>
+                  <th className="p-3 font-bold uppercase text-xs">NAME</th>
+                  <th className="p-3 font-bold uppercase text-xs">CALLSIGN</th>
+                  <th className="p-3 font-bold uppercase text-xs">TYPE</th>
+                  <th className="p-3 font-bold uppercase text-xs">STATUS</th>
+                  <th className="p-3 font-bold uppercase text-xs">TEAM</th>
+                  <th className="p-3 font-bold uppercase text-xs">PHONE</th>
+                  <th className="p-3 font-bold uppercase text-xs">AVAIL</th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-slate-700/50 overflow-y-auto">
+                {MOCK_PERSONNEL.map((p, i) => (
+                  <tr key={i} className="hover:bg-slate-700/30 cursor-pointer">
+                    <td className="p-3 text-white font-medium">{p.name}</td>
+                    <td className="p-3 text-slate-300">{p.callsign}</td>
+                    <td className="p-3 text-slate-500"><span className="bg-slate-800 px-2 py-0.5 rounded border border-slate-700 text-xs">{p.type}</span></td>
+                    <td className="p-3 text-slate-500"><span className="bg-slate-800 px-2 py-0.5 rounded border border-slate-700 text-xs">{p.status}</span></td>
+                    <td className="p-3 text-slate-300">{p.team}</td>
+                    <td className="p-3 text-slate-300">{p.phone}</td>
+                    <td className="p-3">
+                      {p.avail && <div className="w-4 h-4 rounded-full bg-green-500/20 border-2 border-green-500 mx-auto flex items-center justify-center">
+                        <div className="w-1.5 h-1.5 rounded-full bg-green-400"></div>
+                      </div>}
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+        </div>
+        <div className="flex-[1] bg-[#1a2333] rounded-lg border border-slate-800 flex items-center justify-center text-slate-500">
+           <div className="text-center flex flex-col items-center">
+              <User size={48} className="mb-4 opacity-50" />
+              <p>Select a member from the table to view details.</p>
+           </div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function ConfigTab() {
+  return (
+    <div className="flex-1 bg-white text-slate-800 flex overflow-hidden">
+      {/* SIDEBAR */}
+      <div className="w-64 bg-slate-50 border-r border-slate-200 overflow-y-auto">
+         <div className="p-4 border-b border-slate-200 flex items-center gap-2 font-bold text-slate-700">
+           <Settings size={18} className="text-blue-600" /> Configuration
+         </div>
+         <MenuSection title="SYSTEM">
+           <MenuItem label="System Health" />
+           <MenuItem label="Audit Log" />
+           <MenuItem label="Import / Export" />
+         </MenuSection>
+         <MenuSection title="INSTALLATION">
+           <MenuItem label="System Settings" />
+           <MenuItem label="API Keys" />
+           <MenuItem label="Lookup Services" />
+           <MenuItem label="Database Info" />
+           <MenuItem label="Backup / Maintenance" />
+         </MenuSection>
+         <MenuSection title="APP PREFERENCES">
+           <MenuItem label="Incident Types" active />
+           <MenuItem label="Severity Levels" />
+           <MenuItem label="Field Help Text" />
+           <MenuItem label="Unit Statuses" />
+           <MenuItem label="Facility Types" />
+           <MenuItem label="Display Settings" />
+           <MenuItem label="Sound / Alerts" />
+         </MenuSection>
+      </div>
+
+      {/* MAIN CONTENT */}
+      <div className="flex-1 flex flex-col overflow-y-auto">
+         <div className="bg-slate-100 p-4 border-b border-slate-200 flex items-center gap-2">
+           <Settings size={20} className="text-blue-600" />
+           <h2 className="text-xl font-semibold text-slate-800">Incident Types</h2>
+         </div>
+
+         <div className="p-6">
+            {/* FORM */}
+            <div className="bg-white border border-slate-200 rounded-lg shadow-sm mb-6">
+              <div className="bg-slate-50 p-3 border-b border-slate-200 text-sm font-semibold text-slate-700">Edit Type</div>
+              <div className="p-4 grid grid-cols-4 gap-4">
+                 <div className="col-span-2">
+                   <label className="block text-xs font-bold text-slate-500 mb-1">Type Name <span className="text-red-500">*</span></label>
+                   <input type="text" defaultValue="WxSpotter" className="w-full border border-slate-300 rounded p-2 text-sm outline-none focus:border-blue-500" />
+                 </div>
+                 <div>
+                   <label className="block text-xs font-bold text-slate-500 mb-1">Group</label>
+                   <input type="text" defaultValue="RACES" className="w-full border border-slate-300 rounded p-2 text-sm outline-none" />
+                 </div>
+                 <div>
+                   <label className="block text-xs font-bold text-slate-500 mb-1">Severity</label>
+                   <select className="w-full border border-slate-300 rounded p-2 text-sm outline-none">
+                     <option>Elevated</option>
+                   </select>
+                 </div>
+                 
+                 <div className="col-span-2">
+                   <label className="block text-xs font-bold text-slate-500 mb-1">Description</label>
+                   <input type="text" defaultValue="Weather Spotter Report" className="w-full border border-slate-300 rounded p-2 text-sm outline-none" />
+                 </div>
+                 <div>
+                   <label className="block text-xs font-bold text-slate-500 mb-1">Color</label>
+                   <div className="flex gap-2">
+                     <div className="w-8 h-8 rounded bg-blue-600 border border-slate-300"></div>
+                     <input type="text" defaultValue="8800ff" className="flex-1 border border-slate-300 rounded p-2 text-sm outline-none" />
+                   </div>
+                 </div>
+                 <div>
+                   <label className="block text-xs font-bold text-slate-500 mb-1">Map Radius</label>
+                   <input type="text" defaultValue="8000" className="w-full border border-slate-300 rounded p-2 text-sm outline-none" />
+                 </div>
+
+                 <div className="col-span-4">
+                   <label className="block text-xs font-bold text-slate-500 mb-1">Protocol</label>
+                   <textarea rows={3} className="w-full border border-slate-300 rounded p-2 text-sm outline-none" defaultValue="1. Record spotter call sign and exact location.&#10;2. Document observation: wind speed, hail size, funnel, rotation.&#10;3. Relay immediately to NWS via SKYWARN net."></textarea>
+                 </div>
+
+                 <div className="col-span-2">
+                   <label className="block text-xs font-bold text-slate-500 mb-1">Regex Match Pattern</label>
+                   <input type="text" defaultValue="weather.*spot|spotter|severe.*weather.*report|tornado.*spot|funnel|hail.*report" className="w-full border border-slate-300 rounded p-2 text-sm font-mono text-xs outline-none" />
+                 </div>
+                 <div className="col-span-2">
+                   <label className="block text-xs font-bold text-slate-500 mb-1">Test Pattern</label>
+                   <input type="text" placeholder="Type sample text to test..." className="w-full border border-slate-300 rounded p-2 text-sm outline-none" />
+                 </div>
+                 
+                 <div className="col-span-4 flex justify-between mt-2 pt-4 border-t border-slate-100">
+                    <div className="flex gap-2">
+                      <button className="bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded text-sm font-bold flex items-center gap-1"><Check size={16}/> Save</button>
+                      <button className="bg-white border border-slate-300 hover:bg-slate-50 text-slate-700 px-4 py-2 rounded text-sm font-medium flex items-center gap-1">Cancel</button>
+                    </div>
+                    <button className="bg-red-50 hover:bg-red-100 text-red-600 border border-red-200 px-4 py-2 rounded text-sm font-medium flex items-center gap-1"><Trash2 size={16}/> Delete</button>
+                 </div>
+              </div>
+            </div>
+
+            {/* TABLE */}
+            <div className="flex justify-between items-center mb-4">
+               <div className="flex gap-2">
+                 <div className="relative">
+                   <input type="text" placeholder="Search types..." className="border border-slate-300 rounded px-3 py-1.5 text-sm outline-none w-48" />
+                 </div>
+                 <select className="border border-slate-300 rounded px-3 py-1.5 text-sm outline-none">
+                   <option>All Groups</option>
+                 </select>
+               </div>
+               <button className="bg-green-600 text-white px-3 py-1.5 rounded text-sm font-medium flex items-center gap-1"><Plus size={16}/> Add Type</button>
+            </div>
+
+            <table className="w-full text-sm text-left border border-slate-200 bg-white">
+              <thead className="bg-slate-50 border-b border-slate-200 text-slate-600">
+                <tr>
+                  <th className="p-3 font-bold text-xs uppercase">ID</th>
+                  <th className="p-3 font-bold text-xs uppercase">TYPE</th>
+                  <th className="p-3 font-bold text-xs uppercase">GROUP</th>
+                  <th className="p-3 font-bold text-xs uppercase">SEV</th>
+                  <th className="p-3 font-bold text-xs uppercase text-center">COLOR</th>
+                  <th className="p-3 font-bold text-xs uppercase">PATTERN</th>
+                  <th className="p-3 font-bold text-xs uppercase">SORT</th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-slate-100">
+                {INCIDENT_TYPES.map((t, i) => (
+                  <tr key={t.id} className="hover:bg-slate-50 cursor-pointer">
+                    <td className="p-3 text-slate-500">{t.id}</td>
+                    <td className="p-3 font-medium text-slate-800">{t.type}</td>
+                    <td className="p-3 text-slate-600">{t.group}</td>
+                    <td className="p-3 text-slate-600">{t.sev}</td>
+                    <td className="p-3 flex justify-center"><div className={`w-6 h-6 rounded border border-slate-300 bg-${t.color}-500`}></div></td>
+                    <td className="p-3 text-blue-500 font-mono text-xs">{t.pattern || 'None'}</td>
+                    <td className="p-3 text-slate-500">{t.sort}</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+         </div>
+      </div>
+    </div>
+  );
+}
+
+function SchedulingTab() {
+  return (
+    <div className="flex-1 bg-slate-50 text-slate-800 flex flex-col overflow-hidden">
+      <div className="bg-white p-4 border-b border-slate-200 flex justify-between items-center shadow-sm z-10">
+        <h2 className="text-xl text-slate-800 font-semibold flex items-center gap-2">
+          <Calendar size={20} className="text-blue-600" /> Scheduling
+        </h2>
+        <div className="flex gap-4">
+           <div className="flex items-center gap-2 font-medium text-blue-600 border-b-2 border-blue-600 pb-1">
+             <Calendar size={16}/> Shifts
+           </div>
+           <div className="flex items-center gap-2 font-medium text-slate-500 hover:text-slate-700 pb-1 cursor-pointer">
+             <Calendar size={16}/> Events <span className="bg-blue-600 text-white text-xs px-2 py-0.5 rounded-full">2</span>
+           </div>
+        </div>
+      </div>
+
+      <div className="flex-1 flex overflow-hidden p-6 gap-6">
+         {/* LEFT SIDEBAR - TEMPLATES */}
+         <div className="w-80 flex flex-col gap-4 overflow-y-auto">
+            <div className="bg-white border border-slate-200 rounded-lg shadow-sm">
+               <div className="bg-slate-50 p-3 border-b border-slate-200 font-semibold text-slate-700 flex justify-between items-center">
+                 Shift Templates <button className="text-blue-600 border border-blue-200 rounded px-1.5 py-0.5 bg-blue-50 hover:bg-blue-100"><Plus size={14}/></button>
+               </div>
+               <div className="divide-y divide-slate-100">
+                 <div className="p-3 flex justify-between items-center hover:bg-slate-50 cursor-pointer">
+                   <div>
+                     <div className="font-bold text-sm text-slate-800">New Oncall test</div>
+                     <div className="text-xs text-slate-500">1w cycle • 1 roles • 0 slots</div>
+                   </div>
+                   <span className="bg-green-600 text-white text-[10px] uppercase font-bold px-2 py-0.5 rounded">Active</span>
+                 </div>
+                 <div className="p-3 flex justify-between items-center bg-blue-50/50 border-l-4 border-blue-600 cursor-pointer">
+                   <div>
+                     <div className="font-bold text-sm text-slate-800">Skywarn 4-Week Rotation</div>
+                     <div className="text-xs text-slate-500">4w cycle • 3 roles • 21 slots</div>
+                   </div>
+                   <span className="bg-green-600 text-white text-[10px] uppercase font-bold px-2 py-0.5 rounded">Active</span>
+                 </div>
+               </div>
+            </div>
+
+            <div className="bg-white border border-slate-200 rounded-lg shadow-sm">
+               <div className="bg-slate-50 p-3 border-b border-slate-200 font-semibold text-slate-700 flex items-center gap-2">
+                 <Calendar size={16}/> Week View
+               </div>
+               <div className="p-4 flex flex-col items-center gap-3">
+                 <div className="flex justify-between items-center w-full">
+                   <button className="border border-slate-300 rounded px-2 py-1 text-slate-600 hover:bg-slate-50">&lt;</button>
+                   <span className="font-bold text-sm">3/23 — 3/29</span>
+                   <button className="border border-slate-300 rounded px-2 py-1 text-slate-600 hover:bg-slate-50">&gt;</button>
+                 </div>
+                 <button className="w-full text-blue-600 font-medium text-sm py-1 rounded hover:bg-blue-50 border border-blue-200">Today</button>
+               </div>
+            </div>
+
+            <div className="bg-white border border-slate-200 rounded-lg shadow-sm flex-1 overflow-y-auto">
+               <div className="bg-slate-50 p-3 border-b border-slate-200 font-semibold text-slate-700 flex justify-between items-center">
+                 Template Settings <button className="text-red-500 border border-red-200 rounded px-1.5 py-0.5 hover:bg-red-50"><Trash2 size={14}/></button>
+               </div>
+               <div className="p-4 flex flex-col gap-4">
+                 <div>
+                   <label className="block text-xs font-bold text-slate-600 mb-1">Name</label>
+                   <input type="text" defaultValue="Skywarn 4-Week Rotation" className="w-full border border-slate-300 rounded p-2 text-sm outline-none focus:border-blue-500" />
+                 </div>
+                 <div>
+                   <label className="block text-xs font-bold text-slate-600 mb-1">Description</label>
+                   <textarea rows={3} className="w-full border border-slate-300 rounded p-2 text-sm outline-none" defaultValue="Primary Skywarn net control rotation. 24/7 coverage with Manager + 2 Support positions. 4-week cycle."></textarea>
+                 </div>
+                 <div className="grid grid-cols-2 gap-2">
+                    <div>
+                      <label className="block text-xs font-bold text-slate-600 mb-1">Rotation Weeks</label>
+                      <input type="number" defaultValue="4" className="w-full border border-slate-300 rounded p-2 text-sm outline-none" />
+                    </div>
+                    <div>
+                      <label className="block text-xs font-bold text-slate-600 mb-1">Timezone</label>
+                      <select className="w-full border border-slate-300 rounded p-2 text-sm outline-none"><option>America/Chicago</option></select>
+                    </div>
+                 </div>
+                 <div className="flex items-center gap-2">
+                   <input type="checkbox" defaultChecked className="w-4 h-4 rounded border-slate-300 text-blue-600" />
+                   <span className="text-sm font-medium text-slate-700">Active</span>
+                 </div>
+                 <button className="w-full bg-blue-600 text-white font-medium py-2 rounded shadow-sm hover:bg-blue-700">Save Template</button>
+               </div>
+            </div>
+         </div>
+
+         {/* RIGHT CALENDAR */}
+         <div className="flex-1 bg-white border border-slate-200 rounded-lg shadow-sm overflow-x-auto">
+            <table className="w-full min-w-[800px] border-collapse">
+               <thead>
+                 <tr className="bg-slate-50 border-b border-slate-200 text-xs font-bold text-slate-600 uppercase">
+                   <th className="p-3 border-r border-slate-200 text-left w-32">SHIFT</th>
+                   <th className="p-3 border-r border-slate-200 text-center text-blue-600">MON 3/23</th>
+                   <th className="p-3 border-r border-slate-200 text-center">TUE 3/24</th>
+                   <th className="p-3 border-r border-slate-200 text-center">WED 3/25</th>
+                   <th className="p-3 border-r border-slate-200 text-center">THU 3/26</th>
+                   <th className="p-3 border-r border-slate-200 text-center">FRI 3/27</th>
+                   <th className="p-3 border-r border-slate-200 text-center">SAT 3/28</th>
+                   <th className="p-3 border-r border-slate-200 text-center">SUN 3/29</th>
+                 </tr>
+               </thead>
+               <tbody className="text-xs">
+                 {/* Morning */}
+                 <tr className="border-b border-slate-200">
+                   <td className="p-3 border-r border-slate-200 bg-slate-50 font-medium">Morning<div className="text-slate-400 font-normal">6:00a-2:00p</div></td>
+                   {[1,2,3,4,5,6,7].map(i => (
+                     <td key={i} className="p-2 border-r border-slate-200 align-top">
+                        <div className="flex flex-col gap-1">
+                          <ShiftPill role="net" call="W9XYZ" color="red" />
+                          <ShiftPill role="net" call="KE9STU" color="blue" />
+                          <div className="flex gap-1">
+                            <ShiftPill role="empty" label="+ Support" />
+                            <ShiftPill role="empty" label="+ Observer" />
+                          </div>
+                        </div>
+                     </td>
+                   ))}
+                 </tr>
+                 {/* Afternoon */}
+                 <tr className="border-b border-slate-200">
+                   <td className="p-3 border-r border-slate-200 bg-slate-50 font-medium">Afternoon<div className="text-slate-400 font-normal">2:00p-10:00p</div></td>
+                   {[1,2,3,4,5,6,7].map(i => (
+                     <td key={i} className="p-2 border-r border-slate-200 align-top">
+                        <div className="flex flex-col gap-1">
+                          <ShiftPill role="net" call="KD9LMN" color="red" />
+                          <ShiftPill role="net" call="WB9VWX" color="blue" />
+                          <div className="flex gap-1">
+                            <ShiftPill role="empty" label="+ Support" />
+                            {i === 2 ? <ShiftPill role="net" call="KE9STU" color="green" /> : <ShiftPill role="empty" label="+ Observer" />}
+                          </div>
+                        </div>
+                     </td>
+                   ))}
+                 </tr>
+                 {/* Night */}
+                 <tr className="border-b border-slate-200">
+                   <td className="p-3 border-r border-slate-200 bg-slate-50 font-medium">Night<div className="text-slate-400 font-normal">10:00p-6:00a</div></td>
+                   {[1,2,3,4,5,6,7].map(i => (
+                     <td key={i} className="p-2 border-r border-slate-200 align-top">
+                        <div className="flex flex-col gap-1">
+                          <ShiftPill role="net" call="KC9ABC" color="red" />
+                          <ShiftPill role="net" call="N9PQR" color="blue" />
+                          <div className="flex gap-1">
+                            <ShiftPill role="empty" label="+ Support" />
+                            <ShiftPill role="empty" label="+ Observer" />
+                          </div>
+                        </div>
+                     </td>
+                   ))}
+                 </tr>
+               </tbody>
+            </table>
+         </div>
+      </div>
+    </div>
+  );
+}
+
+// --- HELPER COMPONENTS ---
+
+function NavBtn({ icon, label, active, highlight, onClick }: { icon: React.ReactNode, label: string, active?: boolean, highlight?: boolean, onClick?: () => void }) {
+  return (
+    <button onClick={onClick} className={`flex items-center gap-1.5 px-3 py-1.5 rounded transition-colors ${
+      active ? 'bg-slate-700 text-white' : 
+      highlight ? 'text-green-400 hover:bg-slate-800' : 
+      'text-slate-400 hover:text-white hover:bg-slate-800'
+    }`}>
       {icon}
-      <span className="text-[10px] font-bold mt-1 uppercase tracking-wider">{label}</span>
+      <span>{label}</span>
     </button>
+  );
+}
+
+function Widget({ title, icon, children, flex }: { title: string, icon: React.ReactNode, children: React.ReactNode, flex?: string }) {
+  return (
+    <div className={`bg-[#1e293b] border border-slate-700 flex flex-col overflow-hidden ${flex} rounded`}>
+      <div className="bg-[#1e293b] border-b border-slate-700 px-3 py-1.5 flex items-center justify-between shrink-0 text-slate-300">
+        <div className="flex items-center gap-2 text-xs font-bold uppercase tracking-wider">
+          {icon}
+          {title}
+        </div>
+        <div className="flex gap-1">
+           <button className="p-1 hover:bg-slate-700 rounded text-slate-500"><RefreshCw size={12}/></button>
+           <button className="p-1 hover:bg-slate-700 rounded text-slate-500"><Maximize size={12}/></button>
+        </div>
+      </div>
+      <div className="flex-1 overflow-auto bg-[#0f172a]">
+        {children}
+      </div>
+    </div>
+  );
+}
+
+function CtrlBtn({ icon, label, className = '' }: { icon: React.ReactNode, label: string, className?: string }) {
+  return (
+    <button className={`flex flex-col items-center justify-center gap-1 p-2 border border-slate-700 bg-[#1e293b] hover:bg-slate-700 rounded text-slate-400 transition-colors ${className}`}>
+      {icon}
+      <span className="text-[8px] font-bold tracking-wider">{label}</span>
+    </button>
+  );
+}
+
+function FormSection({ title, icon, children, badge }: { title: string, icon: React.ReactNode, children: React.ReactNode, badge?: string }) {
+  return (
+    <div className="bg-[#1e293b] border border-slate-700 rounded flex flex-col">
+       <div className="bg-slate-800 p-2 border-b border-slate-700 flex items-center justify-between">
+         <div className="flex items-center gap-2 text-sm text-white font-medium">
+           {icon} {title}
+         </div>
+         {badge && <span className="bg-red-500/20 text-red-400 border border-red-500/30 text-[10px] font-bold px-2 py-0.5 rounded uppercase">{badge}</span>}
+       </div>
+       <div className="p-4">
+         {children}
+       </div>
+    </div>
+  );
+}
+
+function MenuSection({ title, children }: { title: string, children: React.ReactNode }) {
+  return (
+    <div className="mb-4">
+      <div className="px-4 py-2 text-xs font-bold text-slate-400 uppercase">{title}</div>
+      <ul>{children}</ul>
+    </div>
+  );
+}
+
+function MenuItem({ label, active }: { label: string, active?: boolean }) {
+  return (
+    <li>
+      <button className={`w-full text-left px-4 py-2 text-sm border-l-4 ${active ? 'border-blue-600 bg-blue-50 text-blue-700 font-medium' : 'border-transparent text-slate-600 hover:bg-slate-100'}`}>
+        {label}
+      </button>
+    </li>
+  );
+}
+
+function ShiftPill({ role, call, color, label }: { role: 'net'|'empty', call?: string, color?: string, label?: string }) {
+  if (role === 'empty') {
+    return (
+      <div className="border border-dashed border-slate-300 rounded px-1.5 py-0.5 text-[10px] text-slate-400 font-medium cursor-pointer hover:bg-slate-50 hover:border-slate-400 text-center flex-1">
+        {label}
+      </div>
+    );
+  }
+  
+  const colors: Record<string, string> = {
+    red: 'border-red-200 text-red-600 bg-red-50',
+    blue: 'border-blue-200 text-blue-600 bg-blue-50',
+    green: 'border-green-200 text-green-600 bg-green-50'
+  };
+  
+  return (
+    <div className={`border rounded px-1.5 py-0.5 text-[10px] font-bold cursor-pointer hover:brightness-95 flex items-center gap-1 ${colors[color || 'blue']}`}>
+      <div className={`w-2 h-2 rounded-full border ${color==='red'?'border-red-400':color==='blue'?'border-blue-400':'border-green-400'}`}></div>
+      {call}
+    </div>
   );
 }
