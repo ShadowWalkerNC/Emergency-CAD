@@ -58,30 +58,40 @@ export default function DispatcherConsole() {
     <div className="min-h-screen bg-[#1e293b] text-slate-200 font-sans flex flex-col h-screen overflow-hidden">
       
       {/* TOP NAVBAR */}
-      <div className="h-12 bg-[#0f172a] border-b border-slate-700 flex items-center justify-between px-4 shrink-0 text-sm">
-        <div className="flex items-center gap-6">
-          <div className="flex items-center gap-2 font-bold text-white">
-            <ShieldAlert size={20} className="text-blue-500" />
-            <span>Tickets <span className="text-slate-400 font-normal text-xs">v4.0.0-dev</span></span>
+      <div className="bg-[#0f172a] border-b border-slate-700 flex flex-col xl:flex-row xl:items-center justify-between px-4 py-2 shrink-0 text-sm gap-4 xl:gap-0">
+        <div className="flex flex-col xl:flex-row xl:items-center gap-4 xl:gap-6 w-full xl:w-auto">
+          <div className="flex items-center justify-between w-full xl:w-auto">
+            <div className="flex items-center gap-2 font-bold text-white">
+              <ShieldAlert size={20} className="text-blue-500" />
+              <span>Tickets <span className="text-slate-400 font-normal text-xs">v4.0.0-dev</span></span>
+            </div>
+            
+            <div className="flex xl:hidden items-center gap-3">
+              <div className="flex items-center gap-1">
+                <div className="w-2 h-2 rounded-full bg-slate-500"></div>
+                <span className="font-mono text-slate-300 text-xs">{time.toLocaleTimeString('en-US', { hour12: false })}</span>
+              </div>
+              <User size={16} className="text-slate-400" />
+            </div>
           </div>
           
-          <div className="flex items-center gap-1">
+          <div className="flex items-center gap-1 overflow-x-auto w-full xl:w-auto pb-2 xl:pb-0 scrollbar-hide">
             <NavBtn icon={<Monitor size={14}/>} label="Situation" active={activeTab === 'Situation'} onClick={() => setActiveTab('Situation')} />
-            <NavBtn icon={<Maximize size={14}/>} label="Full Screen" />
+            <NavBtn icon={<Maximize size={14}/>} label="Full Screen" onClick={() => document.documentElement.requestFullscreen().catch(() => {})} />
             <NavBtn icon={<PlusCircle size={14}/>} label="New" highlight active={activeTab === 'New'} onClick={() => setActiveTab('New')} />
-            <NavBtn icon={<Truck size={14}/>} label="Units" />
-            <NavBtn icon={<Building2 size={14}/>} label="Fac's" />
-            <NavBtn icon={<Search size={14}/>} label="Search" />
+            <NavBtn icon={<Truck size={14}/>} label="Units" active={activeTab === 'Units'} onClick={() => setActiveTab('Units')} />
+            <NavBtn icon={<Building2 size={14}/>} label="Fac's" active={activeTab === 'Facs'} onClick={() => setActiveTab('Facs')} />
+            <NavBtn icon={<Search size={14}/>} label="Search" active={activeTab === 'Search'} onClick={() => setActiveTab('Search')} />
             <NavBtn icon={<Users size={14}/>} label="Personnel" active={activeTab === 'Personnel'} onClick={() => setActiveTab('Personnel')} />
             <NavBtn icon={<Calendar size={14}/>} label="Scheduling" active={activeTab === 'Scheduling'} onClick={() => setActiveTab('Scheduling')} />
-            <NavBtn icon={<FileText size={14}/>} label="Reports" />
+            <NavBtn icon={<FileText size={14}/>} label="Reports" active={activeTab === 'Reports'} onClick={() => setActiveTab('Reports')} />
             <NavBtn icon={<Settings size={14}/>} label="Config" active={activeTab === 'Config'} onClick={() => setActiveTab('Config')} />
-            <NavBtn icon={<BookOpen size={14}/>} label="SOP" />
-            <NavBtn icon={<Phone size={14}/>} label="Contacts" />
+            <NavBtn icon={<BookOpen size={14}/>} label="SOP" active={activeTab === 'SOP'} onClick={() => setActiveTab('SOP')} />
+            <NavBtn icon={<Phone size={14}/>} label="Contacts" active={activeTab === 'Contacts'} onClick={() => setActiveTab('Contacts')} />
           </div>
         </div>
         
-        <div className="flex items-center gap-4">
+        <div className="items-center gap-4 hidden xl:flex">
           <div className="flex items-center gap-2">
             <div className="w-2 h-2 rounded-full bg-slate-500"></div>
             <span className="font-mono text-slate-300">{time.toLocaleTimeString('en-US', { hour12: false })}</span>
@@ -93,7 +103,7 @@ export default function DispatcherConsole() {
           </div>
           <div className="flex items-center gap-2 text-slate-300 hover:text-white cursor-pointer pl-2 border-l border-slate-700">
             <User size={16} />
-            <span>admin (Super)</span>
+            <span className="whitespace-nowrap">admin (Super)</span>
           </div>
           <button className="p-1.5 hover:bg-red-500/20 text-red-400 rounded"><LogOut size={16}/></button>
         </div>
@@ -106,6 +116,7 @@ export default function DispatcherConsole() {
         {activeTab === 'Personnel' && <PersonnelTab />}
         {activeTab === 'Config' && <ConfigTab />}
         {activeTab === 'Scheduling' && <SchedulingTab />}
+        {['Units', 'Facs', 'Search', 'Reports', 'SOP', 'Contacts'].includes(activeTab) && <PlaceholderTab name={activeTab} />}
       </div>
 
     </div>
@@ -125,42 +136,44 @@ function DashboardTab() {
           <button className="p-1 bg-blue-600 hover:bg-blue-500 rounded text-white"><BookOpen size={14}/></button>
         </div>
       </div>
-      <div className="flex-1 flex gap-2 overflow-hidden">
+      <div className="flex-1 flex flex-col lg:flex-row gap-2 overflow-y-auto lg:overflow-hidden">
         <div className="flex-[4] flex flex-col gap-2 min-w-0">
-          <Widget title="Incidents" icon={<AlertTriangle size={14}/>} flex="flex-[4]">
-            <table className="w-full text-xs text-left">
-              <thead className="text-slate-400 border-b border-slate-700 bg-slate-800/50 sticky top-0">
-                <tr>
-                  <th className="p-2 font-bold">ID</th>
-                  <th className="p-2 font-bold">SCOPE</th>
-                  <th className="p-2 font-bold">TYPE</th>
-                  <th className="p-2 font-bold">LOCATION</th>
-                  <th className="p-2 font-bold">SEV</th>
-                  <th className="p-2 font-bold">UNITS</th>
-                  <th className="p-2 font-bold">UPDATED</th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-slate-700/50">
-                {MOCK_INCIDENTS.map((inc, i) => (
-                  <tr key={i} className="hover:bg-slate-700/30">
-                    <td className="p-2 text-blue-400">{inc.id}</td>
-                    <td className="p-2">{inc.scope}</td>
-                    <td className="p-2">{inc.type}</td>
-                    <td className="p-2 truncate max-w-[200px]">{inc.location}</td>
-                    <td className="p-2">
-                      <span className={`px-2 py-0.5 rounded font-bold text-black ${inc.sev === 1 ? 'bg-yellow-400' : 'bg-green-500'}`}>
-                        {inc.sev}
-                      </span>
-                    </td>
-                    <td className="p-2">{inc.units}</td>
-                    <td className="p-2 text-slate-400">{inc.updated}</td>
+          <Widget title="Incidents" icon={<AlertTriangle size={14}/>} flex="flex-[4] min-h-[300px]">
+            <div className="overflow-x-auto">
+              <table className="w-full text-xs text-left min-w-[600px]">
+                <thead className="text-slate-400 border-b border-slate-700 bg-slate-800/50 sticky top-0">
+                  <tr>
+                    <th className="p-2 font-bold">ID</th>
+                    <th className="p-2 font-bold">SCOPE</th>
+                    <th className="p-2 font-bold">TYPE</th>
+                    <th className="p-2 font-bold">LOCATION</th>
+                    <th className="p-2 font-bold">SEV</th>
+                    <th className="p-2 font-bold">UNITS</th>
+                    <th className="p-2 font-bold">UPDATED</th>
                   </tr>
-                ))}
-              </tbody>
-            </table>
+                </thead>
+                <tbody className="divide-y divide-slate-700/50">
+                  {MOCK_INCIDENTS.map((inc, i) => (
+                    <tr key={i} className="hover:bg-slate-700/30">
+                      <td className="p-2 text-blue-400">{inc.id}</td>
+                      <td className="p-2">{inc.scope}</td>
+                      <td className="p-2">{inc.type}</td>
+                      <td className="p-2 truncate max-w-[200px]">{inc.location}</td>
+                      <td className="p-2">
+                        <span className={`px-2 py-0.5 rounded font-bold text-black ${inc.sev === 1 ? 'bg-yellow-400' : 'bg-green-500'}`}>
+                          {inc.sev}
+                        </span>
+                      </td>
+                      <td className="p-2">{inc.units}</td>
+                      <td className="p-2 text-slate-400">{inc.updated}</td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
           </Widget>
         </div>
-        <div className="w-24 flex flex-col gap-2 shrink-0">
+        <div className="w-full lg:w-24 flex lg:flex-col gap-2 shrink-0">
           <Widget title="Controls" icon={<Settings size={14}/>} flex="flex-[1]">
              <div className="grid grid-cols-2 gap-1 p-1">
                <CtrlBtn icon={<CheckSquare size={16}/>} label="ASSIGNED" />
@@ -199,7 +212,7 @@ function NewIncidentTab() {
         </div>
       </div>
 
-      <div className="flex flex-1 gap-4">
+      <div className="flex flex-col lg:flex-row flex-1 gap-4">
         {/* LEFT COLUMN */}
         <div className="flex-[1] flex flex-col gap-4">
           <FormSection title="Classification" icon={<AlertTriangle size={16}/>} badge="Required">
@@ -381,9 +394,10 @@ function PersonnelTab() {
          </div>
       </div>
 
-      <div className="flex-1 flex p-4 gap-4 overflow-hidden">
-        <div className="flex-[2] bg-[#1e293b] rounded-lg border border-slate-700 overflow-hidden flex flex-col">
-          <table className="w-full text-sm text-left">
+      <div className="flex-1 flex flex-col lg:flex-row p-4 gap-4 overflow-y-auto lg:overflow-hidden">
+        <div className="flex-[2] bg-[#1e293b] rounded-lg border border-slate-700 overflow-hidden flex flex-col min-h-[400px]">
+          <div className="overflow-x-auto h-full">
+            <table className="w-full text-sm text-left min-w-[600px]">
               <thead className="text-slate-400 bg-slate-800/50 sticky top-0 border-b border-slate-700">
                 <tr>
                   <th className="p-3 font-bold uppercase text-xs">NAME</th>
@@ -413,8 +427,9 @@ function PersonnelTab() {
                 ))}
               </tbody>
             </table>
+          </div>
         </div>
-        <div className="flex-[1] bg-[#1a2333] rounded-lg border border-slate-800 flex items-center justify-center text-slate-500">
+        <div className="flex-[1] bg-[#1a2333] rounded-lg border border-slate-800 flex items-center justify-center text-slate-500 min-h-[200px]">
            <div className="text-center flex flex-col items-center">
               <User size={48} className="mb-4 opacity-50" />
               <p>Select a member from the table to view details.</p>
@@ -427,9 +442,9 @@ function PersonnelTab() {
 
 function ConfigTab() {
   return (
-    <div className="flex-1 bg-white text-slate-800 flex overflow-hidden">
+    <div className="flex-1 bg-white text-slate-800 flex flex-col md:flex-row overflow-y-auto md:overflow-hidden">
       {/* SIDEBAR */}
-      <div className="w-64 bg-slate-50 border-r border-slate-200 overflow-y-auto">
+      <div className="w-full md:w-64 bg-slate-50 border-b md:border-b-0 md:border-r border-slate-200 md:overflow-y-auto shrink-0 hidden md:block">
          <div className="p-4 border-b border-slate-200 flex items-center gap-2 font-bold text-slate-700">
            <Settings size={18} className="text-blue-600" /> Configuration
          </div>
@@ -467,8 +482,8 @@ function ConfigTab() {
             {/* FORM */}
             <div className="bg-white border border-slate-200 rounded-lg shadow-sm mb-6">
               <div className="bg-slate-50 p-3 border-b border-slate-200 text-sm font-semibold text-slate-700">Edit Type</div>
-              <div className="p-4 grid grid-cols-4 gap-4">
-                 <div className="col-span-2">
+              <div className="p-4 grid grid-cols-1 md:grid-cols-4 gap-4">
+                 <div className="md:col-span-2">
                    <label className="block text-xs font-bold text-slate-500 mb-1">Type Name <span className="text-red-500">*</span></label>
                    <input type="text" defaultValue="WxSpotter" className="w-full border border-slate-300 rounded p-2 text-sm outline-none focus:border-blue-500" />
                  </div>
@@ -483,15 +498,15 @@ function ConfigTab() {
                    </select>
                  </div>
                  
-                 <div className="col-span-2">
+                 <div className="md:col-span-2">
                    <label className="block text-xs font-bold text-slate-500 mb-1">Description</label>
                    <input type="text" defaultValue="Weather Spotter Report" className="w-full border border-slate-300 rounded p-2 text-sm outline-none" />
                  </div>
                  <div>
                    <label className="block text-xs font-bold text-slate-500 mb-1">Color</label>
                    <div className="flex gap-2">
-                     <div className="w-8 h-8 rounded bg-blue-600 border border-slate-300"></div>
-                     <input type="text" defaultValue="8800ff" className="flex-1 border border-slate-300 rounded p-2 text-sm outline-none" />
+                     <div className="w-8 h-8 rounded bg-blue-600 border border-slate-300 shrink-0"></div>
+                     <input type="text" defaultValue="8800ff" className="flex-1 border border-slate-300 rounded p-2 text-sm outline-none min-w-0" />
                    </div>
                  </div>
                  <div>
@@ -499,45 +514,46 @@ function ConfigTab() {
                    <input type="text" defaultValue="8000" className="w-full border border-slate-300 rounded p-2 text-sm outline-none" />
                  </div>
 
-                 <div className="col-span-4">
+                 <div className="md:col-span-4">
                    <label className="block text-xs font-bold text-slate-500 mb-1">Protocol</label>
                    <textarea rows={3} className="w-full border border-slate-300 rounded p-2 text-sm outline-none" defaultValue="1. Record spotter call sign and exact location.&#10;2. Document observation: wind speed, hail size, funnel, rotation.&#10;3. Relay immediately to NWS via SKYWARN net."></textarea>
                  </div>
 
-                 <div className="col-span-2">
+                 <div className="md:col-span-2">
                    <label className="block text-xs font-bold text-slate-500 mb-1">Regex Match Pattern</label>
                    <input type="text" defaultValue="weather.*spot|spotter|severe.*weather.*report|tornado.*spot|funnel|hail.*report" className="w-full border border-slate-300 rounded p-2 text-sm font-mono text-xs outline-none" />
                  </div>
-                 <div className="col-span-2">
+                 <div className="md:col-span-2">
                    <label className="block text-xs font-bold text-slate-500 mb-1">Test Pattern</label>
                    <input type="text" placeholder="Type sample text to test..." className="w-full border border-slate-300 rounded p-2 text-sm outline-none" />
                  </div>
                  
-                 <div className="col-span-4 flex justify-between mt-2 pt-4 border-t border-slate-100">
+                 <div className="md:col-span-4 flex flex-col md:flex-row justify-between gap-4 mt-2 pt-4 border-t border-slate-100">
                     <div className="flex gap-2">
-                      <button className="bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded text-sm font-bold flex items-center gap-1"><Check size={16}/> Save</button>
-                      <button className="bg-white border border-slate-300 hover:bg-slate-50 text-slate-700 px-4 py-2 rounded text-sm font-medium flex items-center gap-1">Cancel</button>
+                      <button className="bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded text-sm font-bold flex items-center gap-1 justify-center flex-1 md:flex-none"><Check size={16}/> Save</button>
+                      <button className="bg-white border border-slate-300 hover:bg-slate-50 text-slate-700 px-4 py-2 rounded text-sm font-medium flex items-center gap-1 justify-center flex-1 md:flex-none">Cancel</button>
                     </div>
-                    <button className="bg-red-50 hover:bg-red-100 text-red-600 border border-red-200 px-4 py-2 rounded text-sm font-medium flex items-center gap-1"><Trash2 size={16}/> Delete</button>
+                    <button className="bg-red-50 hover:bg-red-100 text-red-600 border border-red-200 px-4 py-2 rounded text-sm font-medium flex items-center gap-1 justify-center"><Trash2 size={16}/> Delete</button>
                  </div>
               </div>
             </div>
 
             {/* TABLE */}
-            <div className="flex justify-between items-center mb-4">
-               <div className="flex gap-2">
-                 <div className="relative">
-                   <input type="text" placeholder="Search types..." className="border border-slate-300 rounded px-3 py-1.5 text-sm outline-none w-48" />
+            <div className="flex flex-col sm:flex-row justify-between sm:items-center gap-4 mb-4">
+               <div className="flex gap-2 w-full sm:w-auto">
+                 <div className="relative flex-1 sm:flex-none">
+                   <input type="text" placeholder="Search types..." className="border border-slate-300 rounded px-3 py-1.5 text-sm outline-none w-full sm:w-48" />
                  </div>
-                 <select className="border border-slate-300 rounded px-3 py-1.5 text-sm outline-none">
+                 <select className="border border-slate-300 rounded px-3 py-1.5 text-sm outline-none flex-1 sm:flex-none">
                    <option>All Groups</option>
                  </select>
                </div>
-               <button className="bg-green-600 text-white px-3 py-1.5 rounded text-sm font-medium flex items-center gap-1"><Plus size={16}/> Add Type</button>
+               <button className="bg-green-600 text-white px-3 py-1.5 rounded text-sm font-medium flex items-center gap-1 justify-center"><Plus size={16}/> Add Type</button>
             </div>
 
-            <table className="w-full text-sm text-left border border-slate-200 bg-white">
-              <thead className="bg-slate-50 border-b border-slate-200 text-slate-600">
+            <div className="overflow-x-auto rounded border border-slate-200">
+              <table className="w-full text-sm text-left bg-white min-w-[700px]">
+                <thead className="bg-slate-50 border-b border-slate-200 text-slate-600">
                 <tr>
                   <th className="p-3 font-bold text-xs uppercase">ID</th>
                   <th className="p-3 font-bold text-xs uppercase">TYPE</th>
@@ -562,6 +578,7 @@ function ConfigTab() {
                 ))}
               </tbody>
             </table>
+            </div>
          </div>
       </div>
     </div>
@@ -585,9 +602,9 @@ function SchedulingTab() {
         </div>
       </div>
 
-      <div className="flex-1 flex overflow-hidden p-6 gap-6">
+      <div className="flex-1 flex flex-col lg:flex-row overflow-y-auto lg:overflow-hidden p-4 lg:p-6 gap-4 lg:gap-6">
          {/* LEFT SIDEBAR - TEMPLATES */}
-         <div className="w-80 flex flex-col gap-4 overflow-y-auto">
+         <div className="w-full lg:w-80 flex flex-col gap-4 overflow-y-auto shrink-0">
             <div className="bg-white border border-slate-200 rounded-lg shadow-sm">
                <div className="bg-slate-50 p-3 border-b border-slate-200 font-semibold text-slate-700 flex justify-between items-center">
                  Shift Templates <button className="text-blue-600 border border-blue-200 rounded px-1.5 py-0.5 bg-blue-50 hover:bg-blue-100"><Plus size={14}/></button>
@@ -826,6 +843,42 @@ function ShiftPill({ role, call, color, label }: { role: 'net'|'empty', call?: s
     <div className={`border rounded px-1.5 py-0.5 text-[10px] font-bold cursor-pointer hover:brightness-95 flex items-center gap-1 ${colors[color || 'blue']}`}>
       <div className={`w-2 h-2 rounded-full border ${color==='red'?'border-red-400':color==='blue'?'border-blue-400':'border-green-400'}`}></div>
       {call}
+    </div>
+  );
+}
+
+function PlaceholderTab({ name }: { name: string }) {
+  const iconMap: Record<string, any> = {
+    Units: <Truck size={48} className="mb-4 opacity-30 text-blue-400" />,
+    Facs: <Building2 size={48} className="mb-4 opacity-30 text-emerald-400" />,
+    Search: <Search size={48} className="mb-4 opacity-30 text-purple-400" />,
+    Reports: <FileText size={48} className="mb-4 opacity-30 text-orange-400" />,
+    SOP: <BookOpen size={48} className="mb-4 opacity-30 text-yellow-400" />,
+    Contacts: <Phone size={48} className="mb-4 opacity-30 text-sky-400" />
+  };
+
+  const nameMap: Record<string, string> = {
+    Units: 'Units',
+    Facs: 'Facilities',
+    Search: 'Global Search',
+    Reports: 'Reports & Analytics',
+    SOP: 'Standard Operating Procedures',
+    Contacts: 'Directory & Contacts'
+  };
+
+  return (
+    <div className="flex-1 p-8 flex flex-col items-center justify-center bg-[#0f172a] text-slate-400 text-center overflow-y-auto">
+       <div className="bg-[#1e293b] border border-slate-700 p-12 rounded-2xl flex flex-col items-center max-w-md w-full shadow-xl">
+         {iconMap[name] || <Settings size={48} className="mb-4 opacity-30 text-slate-400" />}
+         <h2 className="text-2xl font-semibold text-white mb-3">{nameMap[name] || name} Module</h2>
+         <p className="text-slate-400 text-sm leading-relaxed mb-6">
+           This module is currently under development or not installed on this instance. 
+           Please contact your system administrator or check back after the next update.
+         </p>
+         <button className="px-6 py-2 bg-slate-800 hover:bg-slate-700 text-white rounded-lg border border-slate-700 transition-colors">
+           Go to Dashboard
+         </button>
+       </div>
     </div>
   );
 }
