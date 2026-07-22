@@ -1,11 +1,35 @@
 import React, { useState, useEffect } from 'react';
-import { Navigation, MessageSquare, CheckCircle, Send, Info } from 'lucide-react';
+import { Navigation, MessageSquare, CheckCircle, Send, Info, Radio, Mic, Languages, Volume2 } from 'lucide-react';
 
 export default function MobileResponder({ unitId }: { unitId: string }) {
   const [unit, setUnit] = useState<any>({ callsign: "MEDIC 51", status: "Available" });
   const [incident, setIncident] = useState<any>(null);
   const [logs, setLogs] = useState<any[]>([{ id: '1', unitId: 'SYS', body: 'Unit online and listening.', type: 'STATUS', timestamp: new Date().toLocaleTimeString() }]);
   const [msg, setMsg] = useState("");
+  const [transcriptions, setTranscriptions] = useState<{id: string, text: string, translated: string, active: boolean}[]>([]);
+
+  useEffect(() => {
+    // Simulated live radio broadcast transcription
+    const phrases = [
+      { t: 4000, en: "Dispatch to all units, be advised of severe weather warning in effect.", es: "Despacho a todas las unidades, aviso de clima severo en efecto." },
+      { t: 9000, en: "Medic 51, confirm receipt of incident INC-832.", es: "Médico 51, confirme recepción del incidente INC-832." },
+      { t: 15000, en: "Engine 12 is on scene, establishing command.", es: "Motor 12 en escena, estableciendo comando." },
+      { t: 22000, en: "Command to Dispatch, we have a two-vehicle collision. Send additional EMS.", es: "Comando a Despacho, tenemos una colisión de dos vehículos. Envíen EMS adicional." }
+    ];
+
+    const timeouts = phrases.map(p => 
+      setTimeout(() => {
+        const newTx = { id: Math.random().toString(), text: p.en, translated: p.es, active: true };
+        setTranscriptions(prev => [...prev.slice(-1), newTx]);
+        
+        setTimeout(() => {
+           setTranscriptions(prev => prev.map(tx => tx.id === newTx.id ? { ...tx, active: false } : tx));
+        }, 4000);
+      }, p.t)
+    );
+    
+    return () => timeouts.forEach(clearTimeout);
+  }, []);
 
   useEffect(() => {
     // Simulate incoming call after 3 seconds
@@ -93,8 +117,39 @@ export default function MobileResponder({ unitId }: { unitId: string }) {
 
       <div className="h-4"></div>
 
+      {/* Live Audio Transcription */}
+      <div className="flex-none bg-slate-900 border border-slate-800 rounded-xl overflow-hidden shadow-lg mb-4 relative">
+        <div className="bg-slate-800/80 p-2 flex justify-between items-center text-slate-400 text-[10px] font-bold border-b border-slate-700/50 uppercase tracking-wider">
+          <div className="flex items-center gap-1.5 text-blue-400">
+            <Radio size={12} className="animate-pulse" /> Live Radio Translation
+          </div>
+          <div className="flex items-center gap-1.5">
+             <Languages size={12} /> EN ➜ ES
+          </div>
+        </div>
+        <div className="p-4 min-h-[85px] flex flex-col justify-center bg-gradient-to-b from-slate-900 to-slate-950">
+          {transcriptions.length > 0 ? (
+            transcriptions.slice(-1).map(tx => (
+              <div key={tx.id} className={`transition-all duration-700 ${tx.active ? 'opacity-100 scale-100' : 'opacity-40 scale-95'}`}>
+                <div className="flex items-start gap-3">
+                  <Volume2 size={18} className={tx.active ? 'text-green-400 animate-pulse mt-0.5 shrink-0' : 'text-slate-600 mt-0.5 shrink-0'} />
+                  <div>
+                    <p className="text-sm font-bold text-slate-200">"{tx.text}"</p>
+                    <p className="text-xs font-medium italic mt-1 text-blue-300">"{tx.translated}"</p>
+                  </div>
+                </div>
+              </div>
+            ))
+          ) : (
+            <div className="flex items-center justify-center gap-2 text-slate-600 text-sm font-medium h-full animate-pulse">
+              <Mic size={14} /> Listening to broadcast...
+            </div>
+          )}
+        </div>
+      </div>
+
       {/* Live Log & Chat */}
-      <div className="flex-1 bg-slate-900 border border-slate-800 rounded-xl flex flex-col overflow-hidden min-h-[250px]">
+      <div className="flex-1 bg-slate-900 border border-slate-800 rounded-xl flex flex-col overflow-hidden min-h-[200px]">
         <div className="bg-slate-800 p-2 flex items-center gap-2 text-slate-400 text-xs font-bold">
           <Info size={14} /> LIVE LOG & CHAT
         </div>
