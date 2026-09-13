@@ -233,11 +233,6 @@ fun IncidentSection(incident: Incident) {
         Button(
             onClick = {
                 println("Navigate to ${incident.address}")
-                } else {
-                    // Fallback to browser if maps not installed
-                    val browserIntent = Intent(Intent.ACTION_VIEW, Uri.parse("https://www.google.com/maps/search/?api=1&query=${Uri.encode(incident.address)}"))
-                    context.startActivity(browserIntent)
-                }
             },
             colors = ButtonDefaults.buttonColors(containerColor = ColorPrimaryBlue),
             modifier = Modifier
@@ -455,6 +450,7 @@ fun LiveRadioSection(modifier: Modifier = Modifier) {
     var transcriptions by remember { mutableStateOf<List<RadioTranscription>>(emptyList()) }
 
     LaunchedEffect(Unit) {
+        var nextTxId = 0
         val phrases = listOf(
             Triple(4000L, "Dispatch to all units, be advised of severe weather warning in effect.", "Despacho a todas las unidades, aviso de clima severo en efecto."),
             Triple(9000L, "Medic 51, confirm receipt of incident INC-832.", "Médico 51, confirme recepción del incidente INC-832."),
@@ -465,7 +461,7 @@ fun LiveRadioSection(modifier: Modifier = Modifier) {
         for (phrase in phrases) {
             delay(phrase.first - (phrases.getOrNull(phrases.indexOf(phrase) - 1)?.first ?: 0L))
             
-            val newId = java.util.UUID.randomUUID().toString()
+            val newId = "tx-${nextTxId++}"
             val tx = RadioTranscription(newId, phrase.second, phrase.third, true)
             transcriptions = listOf(tx)
             
