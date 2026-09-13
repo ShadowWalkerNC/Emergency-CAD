@@ -17,9 +17,9 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import java.text.SimpleDateFormat
-import java.util.Date
-import java.util.Locale
+import kotlinx.datetime.Clock
+import kotlinx.datetime.TimeZone
+import kotlinx.datetime.toLocalDateTime
 
 // Data Models
 data class MIncident(val id: String, val scope: String, val type: String, val location: String, val sev: Int, val units: Int, val updated: String)
@@ -43,6 +43,13 @@ val MOCK_FACILITIES = listOf(
     MFacility("Community Center", "ICC", "", "-")
 )
 
+// Multiplatform replacement for java.text.SimpleDateFormat("HH:mm:ss")
+fun currentTimeString(): String {
+    val now = Clock.System.now().toLocalDateTime(TimeZone.currentSystemDefault())
+    return listOf(now.hour, now.minute, now.second)
+        .joinToString(":") { it.toString().padStart(2, '0') }
+}
+
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun DispatcherScreen() {
@@ -65,8 +72,7 @@ fun DispatcherScreen() {
                 Text("v4.0.0-dev", color = Color(0xFF94A3B8), fontSize = 12.sp)
             }
             
-            val timeFormat = SimpleDateFormat("HH:mm:ss", Locale.getDefault())
-            Text(timeFormat.format(Date()), color = Color(0xFFCBD5E1), fontFamily = androidx.compose.ui.text.font.FontFamily.Monospace)
+            Text(currentTimeString(), color = Color(0xFFCBD5E1), fontFamily = androidx.compose.ui.text.font.FontFamily.Monospace)
         }
 
         // TOOLBAR SCROLLABLE
